@@ -1,8 +1,22 @@
+export interface Citation {
+  text: string;
+  url: string;
+  title?: string;
+}
+
+export interface ImageData {
+  url: string;
+  alt: string;
+  caption?: string;
+}
+
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
   error?: boolean;
+  citations?: Citation[];
+  images?: ImageData[];
 }
 
 export interface Conversation {
@@ -18,4 +32,6 @@ export interface ChatResponse {
   response: string; // the response from the backend
   conversation_id: string; // the conversation ID
   timestamp: string; // the timestamp of the response
-} 
+  citations?: Citation[]; // optional citations
+  images?: ImageData[]; // optional images
+}
