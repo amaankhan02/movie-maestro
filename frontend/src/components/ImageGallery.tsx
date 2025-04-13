@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { FiX } from 'react-icons/fi';
 import { ImageData } from '../types';
+import Image from 'next/image';
 
 interface ImageGalleryProps {
   images: ImageData[];
@@ -24,9 +25,11 @@ export default function ImageGallery({ images, isDarkMode }: ImageGalleryProps) 
             className="cursor-pointer rounded-md overflow-hidden"
             onClick={() => setSelectedImage(image)}
           >
-            <img 
+            <Image 
               src={image.url} 
               alt={image.alt} 
+              width={500}
+              height={281}
               className="w-full h-auto object-cover"
               style={{ aspectRatio: '16/9' }}
             />
@@ -50,9 +53,11 @@ export default function ImageGallery({ images, isDarkMode }: ImageGalleryProps) 
             >
               <FiX className="w-6 h-6" />
             </button>
-            <img 
+            <Image 
               src={selectedImage.url} 
               alt={selectedImage.alt} 
+              width={1200}
+              height={675}
               className="w-full h-auto max-h-[90vh] object-contain" 
             />
             {selectedImage.caption && (

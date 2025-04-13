@@ -99,7 +99,7 @@ export default function Home() {
       if (response.related_queries && response.related_queries.length > 0) {
         setRelatedQueries(response.related_queries);
       }
-    } catch (error) {
+    } catch (_error) {
       const errorMessage: Message = {
         role: 'assistant',
         content: "Sorry, I encountered an error. Please try again.",
@@ -158,7 +158,7 @@ export default function Home() {
           setRelatedQueries(response.related_queries);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       const errorMessage: Message = {
         role: 'assistant',
         content: "Sorry, the retry attempt failed. Please try again later.",
