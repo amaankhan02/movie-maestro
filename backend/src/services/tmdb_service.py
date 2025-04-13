@@ -26,7 +26,12 @@ class TMDbService:
         self.base_image_url = "https://image.tmdb.org/t/p/original/"
         self.analyzer_chain = self._create_query_analyzer_chain()
         self.response_generator_chain = self._create_response_generator_chain()
-        self.movie_history = {}  # Track movies queried in each conversation
+        self.movie_history = (
+            {}
+        )  # Track movies queried in each conversation by conversation_id
+        self.conversation_movies = (
+            {}
+        )  # Track the order of movies discussed in each conversation
 
     def _create_query_analyzer_chain(self):
         """Creates a chain that decides if a query requires movie data"""
@@ -35,19 +40,24 @@ class TMDbService:
         1) Is the query asking about a specific movie or movies?
         2) If yes, what movie titles should be searched for?
         3) For each movie mentioned in the query, please identify it separately.
+        4) Does the query refer to previously discussed movies without naming them explicitly?
+           This includes phrases like "those movies", "the previous movies", "compare it to those", etc.
 
         Query: {query}
+        Previous Movie Context: {previous_movies}
 
         Response format (JSON):
         {{{{
           "needs_movie_data": true/false,
-          "movie_titles": ["movie title 1", "movie title 2", ...] (or empty list if none)
+          "movie_titles": ["movie title 1", "movie title 2", ...],
+          "references_previous_movies": true/false
         }}}}
 
         Examples:
-        - For "Tell me about Inception": {{"needs_movie_data": true, "movie_titles": ["Inception"]}}
-        - For "Compare Inception to Interstellar": {{"needs_movie_data": true, "movie_titles": ["Inception", "Interstellar"]}}
-        - For "What's the weather today?": {{"needs_movie_data": false, "movie_titles": []}}
+        - For "Tell me about Inception": {{"needs_movie_data": true, "movie_titles": ["Inception"], "references_previous_movies": false}}
+        - For "Compare Inception to Interstellar": {{"needs_movie_data": true, "movie_titles": ["Inception", "Interstellar"], "references_previous_movies": false}}
+        - For "What about The Dark Knight? How does it compare to those previous movies?": {{"needs_movie_data": true, "movie_titles": ["The Dark Knight"], "references_previous_movies": true}}
+        - For "What's the weather today?": {{"needs_movie_data": false, "movie_titles": [], "references_previous_movies": false}}
         """
 
         prompt = PromptTemplate.from_template(template)
@@ -72,7 +82,12 @@ class TMDbService:
         - "Inception was directed by Christopher Nolan [1]."
         - "Interstellar explores themes of space travel and time dilation [2]."
         
+        If the query refers to "previous movies" or makes comparisons without naming specific movies, make sure to include
+        all relevant movies from the context in your answer, with appropriate citations for each.
+        
         If comparing multiple movies, be sure to include information about each movie and make direct comparisons between them.
+        Include concrete specific details from each movie with citations when making comparisons.
+        
         Make sure to be accurate and thorough in your response.
         Only add citation numbers to factual information that comes directly from the movie data provided.
         
@@ -235,22 +250,52 @@ class TMDbService:
         # Initialize conversation history if it doesn't exist
         if conversation_id and conversation_id not in self.movie_history:
             self.movie_history[conversation_id] = {}
+            self.conversation_movies[conversation_id] = []
+
+        # Get the list of previously discussed movies for this conversation
+        previous_movies = []
+        if conversation_id and conversation_id in self.conversation_movies:
+            previous_movies = self.conversation_movies[conversation_id]
+
+        # Create a formatted string of previous movies for the analyzer
+        previous_movies_str = (
+            ", ".join(previous_movies)
+            if previous_movies
+            else "No previously discussed movies"
+        )
 
         # First, analyze if we need movie data
-        analysis_result = await self.analyzer_chain.ainvoke({"query": query})
+        analysis_result = await self.analyzer_chain.ainvoke(
+            {"query": query, "previous_movies": previous_movies_str}
+        )
 
         try:
             # Parse the analysis
             analysis = json.loads(analysis_result)
             needs_movie_data = analysis.get("needs_movie_data", False)
             movie_titles = analysis.get("movie_titles", [])
+            references_previous_movies = analysis.get(
+                "references_previous_movies", False
+            )
         except Exception as e:
             print(f"Error parsing analysis result: {e}")
             # If parsing fails, assume we don't need movie data
             return None, None, None
 
         # If we don't need movie data, return None
-        if not needs_movie_data or not movie_titles:
+        if not needs_movie_data and not references_previous_movies:
+            return None, None, None
+
+        # If the query references previous movies, include them in the list
+        # of movies to process, even if they're not explicitly mentioned
+        if references_previous_movies and conversation_id and previous_movies:
+            # Add previously discussed movies that aren't already in movie_titles
+            for prev_movie in previous_movies:
+                if prev_movie not in movie_titles:
+                    movie_titles.append(prev_movie)
+
+        # If we still don't have any movie titles after checking references, return None
+        if not movie_titles:
             return None, None, None
 
         # Filter out movies we've already queried in this conversation
@@ -266,6 +311,7 @@ class TMDbService:
         all_movie_data = []
         all_citations = []
         all_images = []
+        processed_movies = []  # Track which movies we've processed in this query
 
         # First, get data for new movies
         for i, movie_title in enumerate(new_movies):
@@ -283,6 +329,9 @@ class TMDbService:
             # Get the top result
             top_result = search_results["results"][0]
             movie_id = top_result["id"]
+            actual_title = top_result.get(
+                "title", movie_title
+            )  # Use the actual title from TMDB
 
             # Fetch detailed movie data
             movie_data = self.fetch_tmdb_data(movie_id)
@@ -316,16 +365,20 @@ class TMDbService:
             else:
                 # Format the movie data for context
                 movie_info = self.format_movie_data(movie_data)
+                actual_title = movie_data.get("title", movie_title)
 
                 # Extract citations and images
                 citation = self.create_citations(movie_data)[0]  # Get first citation
                 movie_images = self.extract_images(movie_data)
 
             # Add to our data collections
-            formatted_movie_info = f"Movie #{len(all_movie_data) + 1} - {top_result.get('title', 'Unknown')}:\n{movie_info}"
+            formatted_movie_info = (
+                f"Movie #{len(all_movie_data) + 1} - {actual_title}:\n{movie_info}"
+            )
             all_movie_data.append(formatted_movie_info)
             all_citations.append(citation)
             all_images.extend(movie_images)
+            processed_movies.append(actual_title)
 
             # Store in history for this conversation
             if conversation_id:
@@ -333,20 +386,54 @@ class TMDbService:
                     "data": movie_info,
                     "citation": citation,
                     "images": movie_images,
+                    "title": actual_title,
                 }
+
+                # Add to conversation movies if not already there
+                if actual_title not in self.conversation_movies[conversation_id]:
+                    self.conversation_movies[conversation_id].append(actual_title)
 
         # Now get data for previously queried movies that are relevant to this query
         if conversation_id:
             for title in movie_titles:
                 title_lower = title.lower()
-                if title_lower in self.movie_history[
-                    conversation_id
-                ] and title_lower not in [m.lower() for m in new_movies]:
+                if title_lower in self.movie_history[conversation_id] and not any(
+                    m.lower() == title_lower for m in processed_movies
+                ):
                     history = self.movie_history[conversation_id][title_lower]
-                    formatted_movie_info = f"Movie #{len(all_movie_data) + 1} - {title}:\n{history['data']}"
+                    actual_title = history.get("title", title)
+                    formatted_movie_info = f"Movie #{len(all_movie_data) + 1} - {actual_title}:\n{history['data']}"
                     all_movie_data.append(formatted_movie_info)
                     all_citations.append(history["citation"])
                     all_images.extend(history["images"])
+                    processed_movies.append(actual_title)
+
+        # If references_previous_movies is true, include all previous movies that weren't explicitly mentioned
+        if references_previous_movies and conversation_id:
+            for prev_title in self.conversation_movies[conversation_id]:
+                # Skip if we've already processed this movie in this query
+                if prev_title in processed_movies:
+                    continue
+
+                # Find the movie in history by title (case-insensitive)
+                movie_found = False
+                for title_key, movie_info in self.movie_history[
+                    conversation_id
+                ].items():
+                    if movie_info.get("title", "").lower() == prev_title.lower():
+                        formatted_movie_info = f"Movie #{len(all_movie_data) + 1} - {prev_title}:\n{movie_info['data']}"
+                        all_movie_data.append(formatted_movie_info)
+                        all_citations.append(movie_info["citation"])
+                        all_images.extend(movie_info["images"])
+                        processed_movies.append(prev_title)
+                        movie_found = True
+                        break
+
+                if not movie_found:
+                    # This shouldn't happen unless there's an inconsistency in the data structures
+                    print(
+                        f"Warning: Movie {prev_title} was in conversation history but not found in movie_history"
+                    )
 
         # If we couldn't find any movie data, return None
         if not all_movie_data:
