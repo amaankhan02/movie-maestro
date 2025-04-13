@@ -5,7 +5,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from ..config import settings
-from ..models import Citation, Conversation, ImageData, Message
+from ..models import Citation, Conversation, ImageData, Message, RelatedQuery
 from .tmdb_service import TMDbService
 
 
@@ -42,9 +42,104 @@ class ChatService:
 
         return messages
 
+    async def _generate_related_queries(
+        self, conversation: Conversation
+    ) -> List[RelatedQuery]:
+        """Generate related queries based on the conversation history.
+
+        The related queries should be relevant follow-up questions that:
+        1. Can be answered using TMDb or comparisons based on chat history
+        2. Don't repeat questions already asked
+        3. May involve streaming platforms, comparisons, or people mentioned in answers
+
+        Returns:
+            List[RelatedQuery]: List of 3 related query suggestions
+        """
+        if len(conversation.messages) < 2:
+            return []
+
+        # Extract user questions from history
+        user_questions = [
+            msg.content for msg in conversation.messages if msg.role == "user"
+        ]
+
+        # Extract assistant responses
+        assistant_responses = [
+            msg.content for msg in conversation.messages if msg.role == "assistant"
+        ]
+
+        # Create a prompt for generating related queries
+        related_query_prompt = f"""
+        Based on the conversation history, generate 3 related queries that the user might want to ask next.
+        
+        Previous user questions:
+        {user_questions}
+        
+        Latest assistant response:
+        {assistant_responses[-1]}
+        
+        The related queries should:
+        1. Be answerable using movie database information or based on the current conversation context
+        2. Not repeat questions already asked
+        3. Focus on one of these categories:
+           - Streaming availability (e.g., "What streaming platform is this movie available on?")
+           - Comparisons between movies mentioned (e.g., "Compare [movie1] with [movie2]")
+           - Information about directors/actors mentioned (e.g., "Tell me more about [director/actor]")
+           - Similar movies or recommendations
+        
+        Return exactly 3 related queries in a clear, direct format.
+        """
+
+        # Create messages for the query generation
+        messages = [
+            SystemMessage(
+                content="You are a helpful assistant that generates relevant follow-up questions about movies."
+            ),
+            HumanMessage(content=related_query_prompt),
+        ]
+
+        # Generate related queries
+        response = await self.llm.agenerate([messages])
+        response_text = response.generations[0][0].text
+
+        # Parse the response into individual queries (assuming one per line or numbered format)
+        query_texts = []
+        for line in response_text.strip().split("\n"):
+            # Remove numbers, dashes, etc. at the beginning of the line
+            clean_line = line.strip()
+            if (
+                clean_line
+                and not clean_line.startswith("```")
+                and not clean_line.endswith("```")
+            ):
+                # Remove any numbered prefixes like "1. ", "2. ", etc.
+                if (
+                    clean_line[0].isdigit()
+                    and len(clean_line) > 2
+                    and clean_line[1:3] in [". ", ") "]
+                ):
+                    clean_line = clean_line[3:].strip()
+                query_texts.append(clean_line)
+
+        # Ensure we have exactly 3 queries
+        query_texts = query_texts[:3]
+        while len(query_texts) < 3:
+            query_texts.append(
+                f"Tell me more about another movie like {user_questions[-1]}"
+            )
+
+        # Convert to RelatedQuery objects
+        return [RelatedQuery(text=text) for text in query_texts]
+
     async def get_response(
         self, message: str, conversation_id: Optional[str] = None
-    ) -> Tuple[str, str, Optional[List[Citation]], Optional[List[ImageData]]]:
+    ) -> Tuple[
+        str,
+        str,
+        Optional[List[Citation]],
+        Optional[List[ImageData]],
+        Optional[List[RelatedQuery]],
+    ]:
         """Get response from the LLM for a given message.
 
         Returns:
@@ -53,6 +148,7 @@ class ChatService:
             - conversation ID
             - list of citations
             - list of images
+            - list of related queries
         """
         # Generate new conversation ID if none provided
         if not conversation_id:
@@ -97,8 +193,13 @@ class ChatService:
             )
             self.conversations[conversation_id].messages.append(assistant_message)
 
-            # Return response with citations and images if available
-            return response_text, conversation_id, citations, images
+            # Generate related queries based on conversation history
+            related_queries = await self._generate_related_queries(
+                self.conversations[conversation_id]
+            )
+
+            # Return response with citations, images, and related queries if available
+            return response_text, conversation_id, citations, images, related_queries
 
         except Exception as e:
             # Add error message to conversation

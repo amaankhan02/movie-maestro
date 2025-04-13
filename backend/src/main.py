@@ -34,8 +34,10 @@ async def chat(request: ChatRequest):
         HTTPException: If there's an error processing the request
     """
     try:
-        response, conversation_id, citations, images = await chat_service.get_response(
-            message=request.message, conversation_id=request.conversation_id
+        response, conversation_id, citations, images, related_queries = (
+            await chat_service.get_response(
+                message=request.message, conversation_id=request.conversation_id
+            )
         )
 
         # send back a ChatResponse from the backend to the frontend
@@ -44,6 +46,7 @@ async def chat(request: ChatRequest):
             conversation_id=conversation_id,
             citations=citations,
             images=images,
+            related_queries=related_queries,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

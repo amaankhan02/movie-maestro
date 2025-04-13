@@ -41,6 +41,17 @@ class ImageData(BaseModel):
     caption: Optional[str] = None
 
 
+class RelatedQuery(BaseModel):
+    """
+    Represents a related query suggestion that can be shown to the user after a response.
+
+    Attributes:
+        text (str): The text of the suggested query
+    """
+
+    text: str
+
+
 class Message(BaseModel):
     """
     Represents a single message in a conversation between a user and the AI assistant.
@@ -96,6 +107,7 @@ class ChatResponse(BaseModel):
         timestamp (datetime): When the response was generated, defaults to current time
         citations (Optional[List[Citation]]): Optional list of citations
         images (Optional[List[ImageData]]): Optional list of images
+        related_queries (Optional[List[RelatedQuery]]): Optional list of related query suggestions
     """
 
     response: str
@@ -103,6 +115,7 @@ class ChatResponse(BaseModel):
     timestamp: datetime = datetime.now()
     citations: Optional[List[Citation]] = None
     images: Optional[List[ImageData]] = None
+    related_queries: Optional[List[RelatedQuery]] = None
 
 
 class Conversation(BaseModel):
