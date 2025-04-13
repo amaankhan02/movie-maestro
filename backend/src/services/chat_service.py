@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import List, Optional, Tuple
 
@@ -202,7 +203,8 @@ class ChatService:
         Available information:
         {data}
         
-        Provide a comprehensive answer to the user's query using the provided information.
+        Provide a concise, focused answer to the user's query using only the most relevant information provided.
+        Keep your response under 500 words unless extensive detail is absolutely necessary.
         
         When citing specific facts, include a numbered citation like [1], [2], etc. at the end of the sentence containing information from the sources.
         DO NOT use source names like [TMDb] or [Wikipedia] in the main text, use only numbered citations.
@@ -212,10 +214,10 @@ class ChatService:
         - "Inception was directed by Christopher Nolan [1]."
         - "The film explores themes of reality and dreams [2]."
         
-        Make sure to address all aspects of the user's query. If information is available from both sources,
-        combine them intelligently to provide a more complete answer.
+        Focus on directly answering the query with the most important information first.
+        If information is available from both sources, prioritize the most relevant details rather than including everything.
         
-        If the information appears to be inconsistent between sources, mention this and provide both perspectives.
+        Only mention contradictions between sources if they are significant and relevant to the query.
         
         Your answer:
         """
@@ -279,17 +281,36 @@ class ChatService:
             tmdb_result = None
             wikipedia_result = None
 
+            # Use asyncio.gather to process data sources in parallel when possible
+            data_source_tasks = []
+
             # Process with TMDb if needed
             if use_tmdb:
-                tmdb_result = await self.tmdb_service.process_movie_query(
+                print("Fetching data from TMDb...")
+                tmdb_task = self.tmdb_service.process_movie_query(
                     message, conversation_id
                 )
+                data_source_tasks.append(tmdb_task)
 
             # Process with Wikipedia if needed
             if use_wikipedia:
-                wikipedia_result = await self.wikipedia_service.process_wikipedia_query(
+                print("Fetching data from Wikipedia...")
+                wiki_task = self.wikipedia_service.process_wikipedia_query(
                     message, conversation_id
                 )
+                data_source_tasks.append(wiki_task)
+
+            # Wait for all data source tasks to complete
+            if data_source_tasks:
+                results = await asyncio.gather(*data_source_tasks)
+
+                # Assign results to their respective variables
+                result_index = 0
+                if use_tmdb:
+                    tmdb_result = results[result_index]
+                    result_index += 1
+                if use_wikipedia:
+                    wikipedia_result = results[result_index]
 
             # If we have data from at least one source, combine them
             if tmdb_result or wikipedia_result:

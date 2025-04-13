@@ -6,6 +6,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
+from ..config import settings
 from ..models import Citation, ImageData
 
 
@@ -22,7 +23,9 @@ class WikipediaService:
         self.base_url = "https://en.wikipedia.org/api/rest_v1"
         self.search_url = "https://en.wikipedia.org/w/api.php"
         self.analyzer_chain = self._create_query_analyzer_chain()
+        self.summarizer_chain = self._create_content_summarizer_chain()
         self.wiki_history = {}  # Track Wikipedia topics queried by conversation_id
+        self.cache = {}  # Simple in-memory cache for Wikipedia articles
 
     def _create_query_analyzer_chain(self):
         """Creates a chain that decides if a query requires Wikipedia data"""
@@ -53,6 +56,34 @@ class WikipediaService:
         prompt = PromptTemplate.from_template(template)
         return prompt | self.llm | StrOutputParser()
 
+    def _create_content_summarizer_chain(self):
+        """Creates a chain that summarizes Wikipedia content to extract the most relevant information"""
+        template = """
+        You are tasked with summarizing Wikipedia content to extract only the most relevant information 
+        for the user's query. Focus on extracting key facts, details, and insights that directly answer 
+        the question rather than including all information from the article.
+        
+        User query: {query}
+        
+        Wikipedia content: 
+        {content}
+        
+        Provide a concise summary (max 300 words) that includes:
+        1. The most relevant facts and information related to the query
+        2. Key dates, people, events, or concepts if relevant
+        3. Significant context needed to understand the topic
+        
+        Exclude:
+        - Peripheral details not directly related to the query
+        - Excessive background information
+        - Redundant information
+        
+        Your summary:
+        """
+
+        prompt = PromptTemplate.from_template(template)
+        return prompt | self.llm | StrOutputParser()
+
     def search_wikipedia(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
         """Search Wikipedia for articles related to the query.
 
@@ -63,6 +94,11 @@ class WikipediaService:
         Returns:
             List of search results
         """
+        # Check cache first
+        cache_key = f"search:{query}"
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+
         params = {
             "action": "query",
             "format": "json",
@@ -76,13 +112,17 @@ class WikipediaService:
             response = requests.get(self.search_url, params=params)
             response.raise_for_status()
             data = response.json()
-            return data.get("query", {}).get("search", [])
+            results = data.get("query", {}).get("search", [])
+
+            # Cache the results
+            self.cache[cache_key] = results
+            return results
         except requests.exceptions.HTTPError as err:
             print(f"HTTP Error: {err}")
             return []
 
     def fetch_article_content(self, page_title: str) -> Optional[Dict[str, Any]]:
-        """Fetch the content of a Wikipedia article.
+        """Fetch the content of a Wikipedia article using extended mode.
 
         Args:
             page_title: Title of the Wikipedia page
@@ -90,14 +130,19 @@ class WikipediaService:
         Returns:
             Dictionary containing article content or None if not found
         """
-        # First, get the normalized title and page ID
+        # Check cache first
+        cache_key = f"article:{page_title}"
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+
+        # Parameters for extended mode (intro + key sections)
         params = {
             "action": "query",
             "format": "json",
             "titles": page_title,
             "prop": "info|extracts|pageimages",
             "inprop": "url",
-            "exintro": 1,
+            "exsentences": 20,  # Get first 20 sentences (intro + a bit more)
             "explaintext": 1,
             "pithumbsize": 500,
         }
@@ -113,7 +158,11 @@ class WikipediaService:
                 return None
 
             page_id = next(iter(pages))
-            return pages[page_id]
+            result = pages[page_id]
+
+            # Cache the result
+            self.cache[cache_key] = result
+            return result
         except requests.exceptions.HTTPError as err:
             print(f"HTTP Error: {err}")
             return None
@@ -193,7 +242,6 @@ class WikipediaService:
             needs_wikipedia = analysis.get("needs_wikipedia_data", False)
             search_terms = analysis.get("search_terms", [])
             is_movie_related = analysis.get("is_movie_related", False)
-            explanation = analysis.get("explanation", "")
         except Exception as e:
             print(f"Error parsing Wikipedia analysis result: {e}")
             return None, None, None
@@ -202,13 +250,15 @@ class WikipediaService:
         if not needs_wikipedia or not search_terms:
             return None, None, None
 
+        print(f"Using extended mode for Wikipedia query: {query}")
+
         # Get the Wikipedia search results
         all_article_data = []
         all_citations = []
         all_images = []
 
-        # Search for each term
-        for term in search_terms:
+        # Search for each term (limit to 2 terms maximum for faster processing)
+        for term in search_terms[:2]:
             search_results = self.search_wikipedia(term)
 
             if not search_results:
@@ -225,6 +275,17 @@ class WikipediaService:
             article_text = article_data.get("extract", "")
             if not article_text:
                 continue
+
+            # Summarize the content to make it more concise and relevant
+            if len(article_text.split()) > 150:
+                try:
+                    summarized_text = await self.summarizer_chain.ainvoke(
+                        {"query": query, "content": article_text}
+                    )
+                    article_text = summarized_text
+                except Exception as e:
+                    print(f"Error summarizing Wikipedia content: {e}")
+                    # Fall back to the original text if summarization fails
 
             # Format the data
             formatted_data = f"Wikipedia information about '{article_data.get('title', '')}':\n{article_text}"

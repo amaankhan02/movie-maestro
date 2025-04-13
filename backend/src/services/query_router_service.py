@@ -36,6 +36,7 @@ class QueryRouterService:
         General rules:
         - If the query is only about a specific movie, director, or actors information, or only involves a very basic comparison use TMDB.
         - If the query involves intermediate or advanced comparison or more open ended questions, use Wikipedia as well with TMDb.
+        - For open ended questions or recommendations, use Wikipedia.
 
         Response format (JSON):
         {{{{
