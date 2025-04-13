@@ -4,13 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { FiCopy, FiRefreshCw, FiSun, FiMoon } from 'react-icons/fi';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  error?: boolean;
-}
+import { sendMessage } from '../services/api';
+import { Message } from '../types';
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,10 +13,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [conversationId, setConversationId] = useState<string>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Apply dark mode class to html element
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
       document.body.style.backgroundColor = '#343541';
@@ -46,7 +41,7 @@ export default function Home() {
     const userMessage: Message = {
       role: 'user',
       content: input,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -55,13 +50,16 @@ export default function Home() {
     setIsTyping(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await sendMessage(input, conversationId);
       
+      if (!conversationId) {
+        setConversationId(response.conversation_id);
+      }
+
       const assistantMessage: Message = {
         role: 'assistant',
-        content: "Here's a sample response with **markdown** support:\n\n```javascript\nconst hello = 'world';\n```\n\nAnd some *italic* and **bold** text.",
-        timestamp: new Date(),
+        content: response.response,
+        timestamp: response.timestamp,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -69,7 +67,7 @@ export default function Home() {
       const errorMessage: Message = {
         role: 'assistant',
         content: "Sorry, I encountered an error. Please try again.",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         error: true,
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -95,7 +93,7 @@ export default function Home() {
       const assistantMessage: Message = {
         role: 'assistant',
         content: "This is a retry attempt with a successful response!",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -103,7 +101,7 @@ export default function Home() {
       const errorMessage: Message = {
         role: 'assistant',
         content: "Sorry, the retry attempt failed. Please try again later.",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         error: true,
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -157,7 +155,7 @@ export default function Home() {
             >
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className={`text-xs opacity-70 ${isDarkMode ? 'text-dark-text' : 'text-gray-600'}`}>
-                  {format(message.timestamp, 'h:mm a')}
+                  {format(new Date(message.timestamp), 'h:mm a')}
                 </span>
                 {message.role === 'assistant' && (
                   <div className="flex gap-2">
