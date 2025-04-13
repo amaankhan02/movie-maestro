@@ -1,12 +1,12 @@
 import uuid
 from typing import List, Optional, Tuple
 
-from langchain.memory import ConversationBufferMemory
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from ..config import settings
 from ..models import Citation, Conversation, ImageData, Message
+from .tmdb_service import TMDbService
 
 
 class ChatService:
@@ -18,15 +18,15 @@ class ChatService:
         )
         self.conversations: dict[str, Conversation] = {}
 
-        # Placeholder for RAG system
-        self.vector_store = None  # TODO: To be implemented
-        self.retriever = None  # TODO: To be implemented
+        # Initialize TMDb service
+        self.tmdb_service = TMDbService(api_key=settings.TMDB_API_KEY, llm=self.llm)
 
     def _create_system_prompt(self) -> str:
         """Create the system prompt for the LLM."""
-        # TODO: Enhance this with RAG context when implemented
-        return """You are an expert on Movies and a helpful AI assistant assisting in movie-related queries. Provide accurate and helpful responses.
-        If you don't know something, say so. Be concise but informative."""
+        return """You are an expert on Movies and a helpful AI assistant assisting in movie-related queries. 
+        Provide accurate and helpful responses. If you don't know something, say so. 
+        Be concise but informative. When citing information from sources like TMDb, use 
+        attribution indicators like [TMDb] at the end of the sentence."""
 
     def _format_messages(
         self, conversation: Conversation
@@ -51,8 +51,8 @@ class ChatService:
             Tuple containing:
             - response text
             - conversation ID
-            - list of citations (None for now)
-            - list of images (None for now)
+            - list of citations
+            - list of images
         """
         # Generate new conversation ID if none provided
         if not conversation_id:
@@ -68,20 +68,37 @@ class ChatService:
         user_message = Message(role="user", content=message)
         self.conversations[conversation_id].messages.append(user_message)
 
-        # Format messages for LLM
-        messages = self._format_messages(self.conversations[conversation_id])
-
         try:
-            # Get response from LLM
-            response = await self.llm.agenerate([messages])
-            response_text = response.generations[0][0].text
+            # First, try to process as a movie query using TMDb service
+            tmdb_response, citations, images = (
+                await self.tmdb_service.process_movie_query(message, conversation_id)
+            )
+
+            if tmdb_response:
+                # If we got a response from TMDb, use it
+                response_text = tmdb_response
+            else:
+                # Otherwise, fall back to regular LLM response
+                # Format messages for LLM
+                messages = self._format_messages(self.conversations[conversation_id])
+
+                # Get response from LLM
+                response = await self.llm.agenerate([messages])
+                response_text = response.generations[0][0].text
+                citations = None
+                images = None
 
             # Add assistant message to conversation
-            assistant_message = Message(role="assistant", content=response_text)
+            assistant_message = Message(
+                role="assistant",
+                content=response_text,
+                citations=citations,
+                images=images,
+            )
             self.conversations[conversation_id].messages.append(assistant_message)
 
-            # Return response with None for citations and images for now
-            return response_text, conversation_id, None, None
+            # Return response with citations and images if available
+            return response_text, conversation_id, citations, images
 
         except Exception as e:
             # Add error message to conversation
