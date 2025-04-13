@@ -3,6 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --user-message-bg: #dbeafe;
+  --user-message-text: #1f2937;
+  --assistant-message-bg: #f3f4f6;
+  --assistant-message-text: #1f2937;
 }
 
 @theme inline {
@@ -16,11 +24,101 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --primary: #60a5fa;
+    --primary-dark: #3b82f6;
+    --text-primary: #f3f4f6;
+    --text-secondary: #d1d5db;
+    --user-message-bg: #2d3748;
+    --user-message-text: #f3f4f6;
+    --assistant-message-bg: #1a202c;
+    --assistant-message-text: #f3f4f6;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 0.5em;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+p {
+  margin-bottom: 1em;
+}
+
+/* Message styling */
+.message {
+  max-width: 85%;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.user-message {
+  background-color: var(--user-message-bg);
+  color: var(--user-message-text);
+  margin-left: auto;
+  border-bottom-right-radius: 0;
+}
+
+.assistant-message {
+  background-color: var(--assistant-message-bg);
+  color: var(--assistant-message-text);
+  margin-right: auto;
+  border-bottom-left-radius: 0;
+}
+
+/* Input styling */
+input {
+  font-size: 1.1rem;
+  padding: 1rem 1.5rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Button styling */
+button {
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
 }

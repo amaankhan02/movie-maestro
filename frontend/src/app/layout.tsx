@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Answer Engine",
-  description: "An intelligent chatbot powered by LLM technology",
+  title: "Movie Maestro",
+  description: "Your intelligent movie companion powered by AI",
 };
 
 export default function RootLayout({

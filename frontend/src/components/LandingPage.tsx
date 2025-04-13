@@ -20,10 +20,10 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) 
   return (
     <div className="w-full">
       <div className="max-w-3xl px-4 mx-auto">
-        <h1 className={`text-4xl md:text-5xl font-bold mb-6 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-          Movie Answer Engine
+        <h1 className={`text-5xl md:text-6xl font-bold mb-8 leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+          Movie Maestro
         </h1>
-        <p className={`text-lg md:text-xl mb-10 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+        <p className={`text-xl md:text-2xl mb-12 leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
           Get intelligent answers about movies, actors, directors, and more. Ask about plots, reviews, or recommendations.
         </p>
         
@@ -34,10 +34,10 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask anything about movies..."
-              className={`w-full p-4 pr-12 text-lg rounded-full border-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full p-5 pr-12 text-lg rounded-full border-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 isDarkMode
-                  ? 'bg-dark-bg-secondary border-dark-border text-dark-text placeholder-gray-400'
-                  : 'bg-white border-gray-300 text-gray-900'
+                  ? 'bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-400'
+                  : 'bg-white border-gray-200 text-gray-900'
               }`}
             />
             <button
@@ -50,9 +50,8 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) 
         </form>
         
         <div className="mt-12">
-          <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Try asking:</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {/* TODO: add LLM-generated suggestions ?*/}
+          <p className={`text-base mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Try asking:</p>
+          <div className="flex flex-wrap justify-center gap-3">
             {[
               "What's a good family movie to watch?",
               "Compare Inception and Interstellar",
@@ -65,9 +64,9 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) 
                   setQuery(suggestion);
                   onSearch(suggestion);
                 }}
-                className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                className={`px-5 py-2.5 rounded-full text-base transition-colors ${
                   isDarkMode
-                    ? 'bg-dark-bg-secondary hover:bg-gray-700 text-gray-300'
+                    ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                 }`}
               >

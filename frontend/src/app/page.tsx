@@ -193,7 +193,7 @@ export default function Home() {
             <FiArrowLeft className="w-5 h-5" />
           </button>
           <h1 className={`text-xl font-bold ${isDarkMode ? 'text-dark-text' : 'text-gray-900'}`}>
-            Movie Answer Engine
+            Movie Maestro
           </h1>
         </div>
         <button
@@ -217,10 +217,12 @@ export default function Home() {
               message.role === 'user' ? 'justify-end' : 'justify-start'
             } ${index > 0 ? 'mt-6' : ''}`}
           >
-                          <div
+            <div
               className={`${
                 message.role === 'user'
-                  ? 'ml-12 md:ml-24 bg-blue-500 text-white rounded-2xl rounded-tr-none'
+                  ? isDarkMode
+                    ? 'ml-12 md:ml-24 bg-gray-700 text-gray-100 rounded-2xl rounded-tr-none'
+                    : 'ml-12 md:ml-24 bg-blue-100 text-gray-800 rounded-2xl rounded-tr-none'
                   : isDarkMode
                     ? 'mr-12 md:mr-24 bg-gray-800 border-gray-700 text-gray-200 shadow-sm rounded-2xl rounded-tl-none'
                     : 'mr-12 md:mr-24 bg-gray-100 border border-gray-200 text-gray-800 shadow-sm rounded-2xl rounded-tl-none'
@@ -228,83 +230,80 @@ export default function Home() {
                 message.images && message.images.length > 0 ? 'max-w-full' : 'max-w-[85%]'
               }`}
             >
-              <div className="flex flex-col md:flex-row">
-                {/* Main content */}
-                <div className={`p-4 ${
-                  message.images && message.images.length > 0 ? 'md:max-w-[60%]' : 'w-full'
-                }`}>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className={`text-xs ${
-                      message.role === 'user' 
-                        ? 'text-blue-100' 
-                        : isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      {format(new Date(message.timestamp), 'h:mm a')}
-                    </span>
-                    {message.role === 'assistant' && (
-                      <div className="flex gap-2">
+              <div className={`p-4 ${
+                message.images && message.images.length > 0 ? 'md:max-w-[60%]' : 'w-full'
+              }`}>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className={`text-xs font-medium ${
+                    message.role === 'user' 
+                      ? isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                      : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    {format(new Date(message.timestamp), 'h:mm a')}
+                  </span>
+                  {message.role === 'assistant' && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => copyToClipboard(message.content)}
+                        className={`p-1.5 rounded hover:bg-opacity-10 ${
+                          isDarkMode
+                            ? 'hover:bg-white text-gray-300'
+                            : 'hover:bg-black text-gray-500'
+                        }`}
+                        title="Copy message"
+                      >
+                        <FiCopy className="w-4 h-4" />
+                      </button>
+                      {message.error && (
                         <button
-                          onClick={() => copyToClipboard(message.content)}
+                          onClick={() => handleRetry(index)}
                           className={`p-1.5 rounded hover:bg-opacity-10 ${
                             isDarkMode
                               ? 'hover:bg-white text-gray-300'
                               : 'hover:bg-black text-gray-500'
                           }`}
-                          title="Copy message"
+                          title="Retry"
                         >
-                          <FiCopy className="w-4 h-4" />
+                          <FiRefreshCw className="w-4 h-4" />
                         </button>
-                        {message.error && (
-                          <button
-                            onClick={() => handleRetry(index)}
-                            className={`p-1.5 rounded hover:bg-opacity-10 ${
-                              isDarkMode
-                                ? 'hover:bg-white text-gray-300'
-                                : 'hover:bg-black text-gray-500'
-                            }`}
-                            title="Retry"
-                          >
-                            <FiRefreshCw className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className={`prose max-w-none ${
-                    isDarkMode 
-                      ? 'prose-invert text-gray-200' 
-                      : 'text-gray-800'
-                  }`}>
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
-                  </div>
-                  
-                  {/* Citations */}
-                  {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
-                    <div className="mt-4 border-t pt-2 space-y-1">
-                      <h4 className={`text-xs font-medium ${
-                        isDarkMode ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-200'
-                      }`}>
-                        Sources
-                      </h4>
-                      {message.citations.map((citation, citIndex) => (
-                        <Citation 
-                          key={citIndex} 
-                          citation={citation} 
-                          index={citIndex} 
-                          isDarkMode={isDarkMode} 
-                        />
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>
+                <div className={`prose max-w-none text-lg font-medium ${
+                  isDarkMode 
+                    ? message.role === 'user' ? 'text-gray-100' : 'text-gray-200'
+                    : 'text-gray-800'
+                }`}>
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
                 
-                {/* Images */}
-                {message.role === 'assistant' && message.images && message.images.length > 0 && (
-                  <div className="md:max-w-[40%] border-t md:border-t-0 md:border-l">
-                    <ImageGallery images={message.images} isDarkMode={isDarkMode} />
+                {/* Citations */}
+                {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
+                  <div className="mt-4 border-t pt-2 space-y-1">
+                    <h4 className={`text-xs font-medium ${
+                      isDarkMode ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-200'
+                    }`}>
+                      Sources
+                    </h4>
+                    {message.citations.map((citation, citIndex) => (
+                      <Citation 
+                        key={citIndex} 
+                        citation={citation} 
+                        index={citIndex} 
+                        isDarkMode={isDarkMode} 
+                      />
+                    ))}
                   </div>
                 )}
               </div>
+              
+              {/* Images */}
+              {message.role === 'assistant' && message.images && message.images.length > 0 && (
+                <div className="md:max-w-[40%] border-t md:border-t-0 md:border-l">
+                  <ImageGallery images={message.images} isDarkMode={isDarkMode} />
+                </div>
+              )}
             </div>
           </div>
         ))}
