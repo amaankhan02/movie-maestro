@@ -1,12 +1,12 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from ..config import settings
-from ..models import Conversation, Message
+from ..models import Citation, Conversation, ImageData, Message
 
 
 class ChatService:
@@ -44,8 +44,16 @@ class ChatService:
 
     async def get_response(
         self, message: str, conversation_id: Optional[str] = None
-    ) -> tuple[str, str]:
-        """Get response from the LLM for a given message."""
+    ) -> Tuple[str, str, Optional[List[Citation]], Optional[List[ImageData]]]:
+        """Get response from the LLM for a given message.
+
+        Returns:
+            Tuple containing:
+            - response text
+            - conversation ID
+            - list of citations (None for now)
+            - list of images (None for now)
+        """
         # Generate new conversation ID if none provided
         if not conversation_id:
             conversation_id = str(uuid.uuid4())
@@ -72,11 +80,14 @@ class ChatService:
             assistant_message = Message(role="assistant", content=response_text)
             self.conversations[conversation_id].messages.append(assistant_message)
 
-            return response_text, conversation_id
+            # Return response with None for citations and images for now
+            return response_text, conversation_id, None, None
 
         except Exception as e:
             # Add error message to conversation
-            error_message = Message(role="assistant", content=f"Error: {str(e)}")
+            error_message = Message(
+                role="assistant", content=f"Error: {str(e)}", error=True
+            )
             self.conversations[conversation_id].messages.append(error_message)
             raise e
 

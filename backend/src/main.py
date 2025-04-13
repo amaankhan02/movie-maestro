@@ -28,18 +28,23 @@ async def chat(request: ChatRequest):
         request (ChatRequest): The chat request containing the message and optional conversation ID
 
     Returns:
-        ChatResponse: The AI's response and conversation ID
+        ChatResponse: The AI's response, conversation ID, and optional citations and images
 
     Raises:
         HTTPException: If there's an error processing the request
     """
     try:
-        response, conversation_id = await chat_service.get_response(
+        response, conversation_id, citations, images = await chat_service.get_response(
             message=request.message, conversation_id=request.conversation_id
         )
 
         # send back a ChatResponse from the backend to the frontend
-        return ChatResponse(response=response, conversation_id=conversation_id)
+        return ChatResponse(
+            response=response,
+            conversation_id=conversation_id,
+            citations=citations,
+            images=images,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
