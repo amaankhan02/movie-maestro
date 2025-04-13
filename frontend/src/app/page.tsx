@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
-import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi';
+import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft, FiChevronDown } from 'react-icons/fi';
 import { sendMessage } from '../services/api';
 import { Message, RelatedQuery } from '../types';
 import LandingPage from '../components/LandingPage';
@@ -21,6 +21,7 @@ export default function Home() {
   const [showLanding, setShowLanding] = useState(true);
   const [relatedQueries, setRelatedQueries] = useState<RelatedQuery[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const relatedQueriesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,6 +36,10 @@ export default function Home() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollToRelatedQueries = () => {
+    document.getElementById('related-queries')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -320,6 +325,20 @@ export default function Home() {
                     ))}
                   </div>
                 )}
+                
+                {/* Related Queries Anchor Link */}
+                {message.role === 'assistant' && relatedQueries.length > 0 && (
+                  <div className="mt-3">
+                    <button 
+                      onClick={scrollToRelatedQueries}
+                      className={`text-sm underline hover:no-underline transition-colors ${
+                        isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+                      }`}
+                    >
+                      View related queries
+                    </button>
+                  </div>
+                )}
               </div>
               
               {/* Images */}
@@ -354,7 +373,7 @@ export default function Home() {
         
         {/* Related Queries - shown only after a response and when not typing */}
         {!isTyping && relatedQueries.length > 0 && (
-          <div className="flex justify-end">
+          <div ref={relatedQueriesRef} className="flex justify-end">
             <RelatedQueries 
               queries={relatedQueries} 
               isDarkMode={isDarkMode} 
