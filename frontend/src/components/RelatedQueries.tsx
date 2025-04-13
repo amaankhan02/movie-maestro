@@ -27,8 +27,8 @@ const RelatedQueries: React.FC<RelatedQueriesProps> = ({
   }
 
   return (
-    <div id="related-queries" className="flex flex-col space-y-4 w-full md:max-w-[80%] mx-auto mt-4">
-      <h2 className={`text-2xl font-bold ${
+    <div id="related-queries" className="flex flex-col space-y-6 w-full md:max-w-[80%] mx-auto mt-4">
+      <h2 className={`text-2xl font-bold text-center ${
         isDarkMode ? 'text-gray-200' : 'text-gray-800'
       }`}>
         Related queries
@@ -39,7 +39,7 @@ const RelatedQueries: React.FC<RelatedQueriesProps> = ({
             key={index}
             onClick={() => onQueryClick(query.text)}
             className={`
-              px-4 py-3 rounded-lg w-full text-left
+              px-4 py-3 rounded-lg w-full max-w-[600px] mx-auto text-center
               transition-all duration-300 transform 
               ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
               ${isDarkMode 
@@ -50,9 +50,11 @@ const RelatedQueries: React.FC<RelatedQueriesProps> = ({
               shadow-sm hover:shadow-md
               hover:scale-[1.02]
               delay-${index * 100}
+              text-3xl
             `}
             style={{ 
-              fontStyle: 'italic'
+              fontStyle: 'italic',
+              fontSize: '20px'
             }}
           >
             {query.text}
