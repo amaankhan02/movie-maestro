@@ -1,4 +1,5 @@
-from typing import Optional
+import os
+from typing import List, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -26,8 +27,8 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
 
     # frontend URL to allow the backend to be accessed from the frontend
-    # TODO: change to the frontend URL when deployed
-    CORS_ORIGINS: list = ["http://localhost:3000"]
+    # loads from environment variable, if not set, defaults to localhost:3000
+    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     class Config:
         env_file = ".env"
