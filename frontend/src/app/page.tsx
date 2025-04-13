@@ -16,7 +16,7 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [conversationId, setConversationId] = useState<string>();
   const [showLanding, setShowLanding] = useState(true);
   const [relatedQueries, setRelatedQueries] = useState<RelatedQuery[]>([]);
@@ -354,7 +354,11 @@ export default function Home() {
         {isTyping && (
           <div className="flex justify-start">
             <div
-              className={`rounded-2xl rounded-tl-none p-4 bg-white dark:bg-dark-bg-secondary border dark:border-dark-border shadow-sm`}
+              className={`rounded-2xl rounded-tl-none p-4 ${
+                isDarkMode 
+                  ? 'bg-gray-800 border-gray-700' 
+                  : 'bg-white border-gray-200'
+              } border shadow-sm`}
             >
               <div className="flex space-x-2">
                 <div className={`w-2 h-2 rounded-full animate-bounce ${
