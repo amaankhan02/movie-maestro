@@ -18,9 +18,9 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) 
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-      <div className="max-w-3xl px-4">
-        <h1 className={`text-4xl md:text-5xl font-bold mb-6 ${isDarkMode ? 'text-dark-text' : 'text-gray-900'}`}>
+    <div className="w-full">
+      <div className="max-w-3xl px-4 mx-auto">
+        <h1 className={`text-4xl md:text-5xl font-bold mb-6 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
           Movie Answer Engine
         </h1>
         <p className={`text-lg md:text-xl mb-10 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -52,6 +52,7 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) 
         <div className="mt-12">
           <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Try asking:</p>
           <div className="flex flex-wrap justify-center gap-2">
+            {/* TODO: add LLM-generated suggestions ?*/}
             {[
               "What's a good family movie to watch?",
               "Compare Inception and Interstellar",

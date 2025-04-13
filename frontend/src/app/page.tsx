@@ -160,28 +160,30 @@ export default function Home() {
 
   if (showLanding) {
     return (
-      <div className={`min-h-screen ${isDarkMode ? 'bg-dark-bg' : 'bg-white'}`}>
+      <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <header className="absolute top-0 right-0 p-4">
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-dark-bg-secondary' : 'hover:bg-gray-100'}`}
+            className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
             title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? (
-              <FiSun className={`w-5 h-5 ${isDarkMode ? 'text-dark-text' : 'text-gray-900'}`} />
+              <FiSun className={`w-5 h-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`} />
             ) : (
-              <FiMoon className={`w-5 h-5 ${isDarkMode ? 'text-dark-text' : 'text-gray-900'}`} />
+              <FiMoon className={`w-5 h-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`} />
             )}
           </button>
         </header>
-        <LandingPage onSearch={handleLandingSearch} isDarkMode={isDarkMode} />
+        <div className="flex-1 flex items-center justify-center">
+          <LandingPage onSearch={handleLandingSearch} isDarkMode={isDarkMode} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-dark-bg' : 'bg-white'}`}>
-      <header className={`py-4 px-4 border-b ${isDarkMode ? 'border-dark-border' : 'border-gray-200'} flex justify-between items-center sticky top-0 z-10 ${isDarkMode ? 'bg-dark-bg' : 'bg-white'}`}>
+    <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+      <header className={`py-4 px-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between items-center sticky top-0 z-10 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="flex items-center">
           <button
             onClick={resetConversation}
@@ -215,11 +217,13 @@ export default function Home() {
               message.role === 'user' ? 'justify-end' : 'justify-start'
             } ${index > 0 ? 'mt-6' : ''}`}
           >
-            <div
+                          <div
               className={`${
                 message.role === 'user'
                   ? 'ml-12 md:ml-24 bg-blue-500 text-white rounded-2xl rounded-tr-none'
-                  : 'mr-12 md:mr-24 bg-white dark:bg-dark-bg-secondary border dark:border-dark-border shadow-sm rounded-2xl rounded-tl-none'
+                  : isDarkMode
+                    ? 'mr-12 md:mr-24 bg-gray-800 border-gray-700 text-gray-200 shadow-sm rounded-2xl rounded-tl-none'
+                    : 'mr-12 md:mr-24 bg-gray-100 border border-gray-200 text-gray-800 shadow-sm rounded-2xl rounded-tl-none'
               } overflow-hidden ${
                 message.images && message.images.length > 0 ? 'max-w-full' : 'max-w-[85%]'
               }`}
@@ -266,7 +270,11 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                  <div className={`prose ${isDarkMode ? 'prose-invert' : ''} max-w-none`}>
+                  <div className={`prose max-w-none ${
+                    isDarkMode 
+                      ? 'prose-invert text-gray-200' 
+                      : 'text-gray-800'
+                  }`}>
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
                   
@@ -323,7 +331,7 @@ export default function Home() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className={`p-4 border-t ${isDarkMode ? 'border-dark-border bg-dark-bg' : 'border-gray-200 bg-white'} sticky bottom-0 z-10`}>
+      <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'} sticky bottom-0 z-10`}>
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
           <div className="relative">
             <input

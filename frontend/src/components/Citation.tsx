@@ -15,7 +15,7 @@ export default function Citation({ citation, index, isDarkMode }: CitationProps)
   return (
     <div 
       className={`mt-1 text-sm rounded-md overflow-hidden ${
-        isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+        isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'
       }`}
     >
       <div 
