@@ -54,9 +54,10 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) 
           <div className="flex flex-wrap justify-center gap-3">
             {[
               "What's a good family movie to watch?",
-              "Compare Inception and Interstellar",
-              "Show me popular sci-fi movies from the last 5 years",
-              "What are Christopher Nolan's best-rated films?"
+              "Compare the plot of Inception and Interstellar",
+              "Where can I watch Toy Story?",
+              "What are Christopher Nolan's best-rated films?",
+              "How has Pulp Fiction impacted Cinema over the years?"
             ].map((suggestion, index) => (
               <button
                 key={index}
