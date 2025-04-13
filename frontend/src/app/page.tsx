@@ -310,8 +310,8 @@ export default function Home() {
                 {/* Citations */}
                 {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
                   <div className="mt-4 border-t pt-2 space-y-1">
-                    <h4 className={`text-xs font-medium ${
-                      isDarkMode ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-200'
+                    <h4 className={`text-lg font-semibold mb-2 ${
+                      isDarkMode ? 'text-gray-300 border-gray-700' : 'text-gray-700 border-gray-200'
                     }`}>
                       Sources
                     </h4>
