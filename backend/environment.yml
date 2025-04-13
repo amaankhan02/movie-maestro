@@ -4,8 +4,15 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - fastapi
-  - uvicorn
-  - langchain
-  - openai
-  - python-dotenv
+  - fastapi=0.110.3
+  - uvicorn=0.34.0
+  - langchain=0.3.13
+  - openai=1.73.0
+  - python-dotenv=1.0.0
+  - pydantic=2.5.2
+  - python-multipart=0.0.6
+  - pytest=7.4.3
+  - httpx=0.25.2
+  - pip
+  - pip:
+    - pydantic-settings
