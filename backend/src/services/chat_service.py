@@ -1,4 +1,5 @@
 import asyncio
+import re
 import uuid
 from typing import List, Optional, Tuple
 
@@ -232,6 +233,36 @@ class ChatService:
 
         return response, all_citations, all_images
 
+    def _filter_unused_citations(
+        self, response_text: str, citations: List[Citation]
+    ) -> List[Citation]:
+        """Filter citations to only include ones that are actually referenced in the response.
+
+        Args:
+            response_text: The generated response text
+            citations: List of all available citations
+
+        Returns:
+            List of citations that are actually used in the response
+        """
+        if not citations:
+            return []
+
+        # Extract citation numbers from response text using regex
+        citation_pattern = r"\[(\d+)\]"
+        citation_matches = re.findall(citation_pattern, response_text)
+
+        used_citation_indices = set(int(idx) for idx in citation_matches)
+
+        used_citations = []
+        for idx in used_citation_indices:
+            # Citation numbers are 1-indexed, but list indices are 0-indexed
+            citation_idx = idx - 1
+            if 0 <= citation_idx < len(citations):
+                used_citations.append(citations[citation_idx])
+
+        return used_citations
+
     async def get_response(
         self, message: str, conversation_id: Optional[str] = None
     ) -> Tuple[
@@ -317,6 +348,10 @@ class ChatService:
                 response_text, citations, images = await self._combine_data_sources(
                     message, tmdb_result, wikipedia_result
                 )
+
+                # Filter out unused citations
+                if citations:
+                    citations = self._filter_unused_citations(response_text, citations)
             else:
                 # If no special data is needed, fall back to regular LLM response
                 messages = self._format_messages(self.conversations[conversation_id])
