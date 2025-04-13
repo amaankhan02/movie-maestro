@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
-import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft, FiChevronDown } from 'react-icons/fi';
+import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi';
 import { sendMessage } from '../services/api';
 import { Message, RelatedQuery } from '../types';
 import LandingPage from '../components/LandingPage';
@@ -99,7 +99,7 @@ export default function Home() {
       if (response.related_queries && response.related_queries.length > 0) {
         setRelatedQueries(response.related_queries);
       }
-    } catch (_error) {
+    } catch {
       const errorMessage: Message = {
         role: 'assistant',
         content: "Sorry, I encountered an error. Please try again.",
@@ -158,7 +158,7 @@ export default function Home() {
           setRelatedQueries(response.related_queries);
         }
       }
-    } catch (_error) {
+    } catch {
       const errorMessage: Message = {
         role: 'assistant',
         content: "Sorry, the retry attempt failed. Please try again later.",
