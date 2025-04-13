@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -27,8 +28,17 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
 
     # frontend URL to allow the backend to be accessed from the frontend
-    # loads from environment variable, if not set, defaults to localhost:3000
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: List[str] = Field(
+        default=["http://localhost:3000"],
+        description="Comma-separated list of allowed CORS origins",
+    )
+
+    @property
+    def cors_origins(self) -> List[str]:
+        """Get CORS origins from environment variable or use default."""
+        if "CORS_ORIGINS" in os.environ:
+            return os.environ["CORS_ORIGINS"].split(",")
+        return self.CORS_ORIGINS
 
     class Config:
         env_file = ".env"
