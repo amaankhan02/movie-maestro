@@ -205,13 +205,13 @@ export default function Home() {
             >
               <div className="flex space-x-2">
                 <div className={`w-2 h-2 rounded-full animate-bounce ${
-                  isDarkMode ? 'bg-dark-text' : 'bg-gray-400'
+                  isDarkMode ? 'bg-gray-400' : 'bg-gray-400'
                 }`} />
                 <div className={`w-2 h-2 rounded-full animate-bounce ${
-                  isDarkMode ? 'bg-dark-text' : 'bg-gray-400'
+                  isDarkMode ? 'bg-gray-400' : 'bg-gray-400'
                 }`} style={{ animationDelay: '0.2s' }} />
                 <div className={`w-2 h-2 rounded-full animate-bounce ${
-                  isDarkMode ? 'bg-dark-text' : 'bg-gray-400'
+                  isDarkMode ? 'bg-gray-400' : 'bg-gray-400'
                 }`} style={{ animationDelay: '0.4s' }} />
               </div>
             </div>
