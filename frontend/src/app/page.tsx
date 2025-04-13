@@ -24,8 +24,10 @@ export default function Home() {
     // Apply dark mode class to html element
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      document.body.style.backgroundColor = '#343541';
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.style.backgroundColor = '#ffffff';
     }
   }, [isDarkMode]);
 
@@ -120,16 +122,16 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto p-4">
-      <header className="py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Answer Engine</h1>
+    <div className={`flex flex-col h-screen max-w-4xl mx-auto p-4 ${isDarkMode ? 'bg-dark-bg' : 'bg-white'}`}>
+      <header className={`py-4 border-b ${isDarkMode ? 'border-dark-border' : 'border-gray-200'} flex justify-between items-center`}>
+        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-dark-text' : 'text-gray-900'}`}>AI Answer Engine</h1>
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-dark-bg-secondary' : 'hover:bg-gray-100'}`}
           title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           {isDarkMode ? (
-            <FiSun className="w-5 h-5 text-gray-100" />
+            <FiSun className="w-5 h-5 text-dark-text" />
           ) : (
             <FiMoon className="w-5 h-5 text-gray-900" />
           )}
@@ -148,18 +150,24 @@ export default function Home() {
               className={`max-w-[80%] rounded-lg p-4 ${
                 message.role === 'user'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                  : isDarkMode
+                  ? 'bg-dark-bg-secondary text-dark-text'
+                  : 'bg-gray-100 text-gray-900'
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-xs opacity-70">
+                <span className={`text-xs opacity-70 ${isDarkMode ? 'text-dark-text' : 'text-gray-600'}`}>
                   {format(message.timestamp, 'h:mm a')}
                 </span>
                 {message.role === 'assistant' && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => copyToClipboard(message.content)}
-                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      className={`p-1 rounded ${
+                        isDarkMode
+                          ? 'hover:bg-dark-bg text-dark-text'
+                          : 'hover:bg-gray-200 text-gray-900'
+                      }`}
                       title="Copy message"
                     >
                       <FiCopy className="w-4 h-4" />
@@ -167,7 +175,11 @@ export default function Home() {
                     {message.error && (
                       <button
                         onClick={() => handleRetry(index)}
-                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                        className={`p-1 rounded ${
+                          isDarkMode
+                            ? 'hover:bg-dark-bg text-dark-text'
+                            : 'hover:bg-gray-200 text-gray-900'
+                        }`}
                         title="Retry"
                       >
                         <FiRefreshCw className="w-4 h-4" />
@@ -176,7 +188,7 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <div className="prose dark:prose-invert max-w-none">
+              <div className={`prose ${isDarkMode ? 'prose-invert' : ''} max-w-none`}>
                 <ReactMarkdown>{message.content}</ReactMarkdown>
               </div>
             </div>
@@ -184,11 +196,23 @@ export default function Home() {
         ))}
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg p-4">
+            <div
+              className={`rounded-lg p-4 ${
+                isDarkMode
+                  ? 'bg-dark-bg-secondary text-dark-text'
+                  : 'bg-gray-100 text-gray-900'
+              }`}
+            >
               <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                  isDarkMode ? 'bg-dark-text' : 'bg-gray-400'
+                }`} />
+                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                  isDarkMode ? 'bg-dark-text' : 'bg-gray-400'
+                }`} style={{ animationDelay: '0.2s' }} />
+                <div className={`w-2 h-2 rounded-full animate-bounce ${
+                  isDarkMode ? 'bg-dark-text' : 'bg-gray-400'
+                }`} style={{ animationDelay: '0.4s' }} />
               </div>
             </div>
           </div>
@@ -203,7 +227,11 @@ export default function Home() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1 p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`flex-1 p-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isDarkMode
+                ? 'bg-dark-bg-secondary border-dark-border text-dark-text placeholder-gray-400'
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
             disabled={isLoading}
           />
           <button
