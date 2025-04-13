@@ -109,8 +109,8 @@ export default function Home() {
   };
 
   const handleRelatedQueryClick = (query: string) => {
-    // When a related query is clicked, submit it as a new user query
-    handleSubmit(undefined, query);
+    const cleanQuery = query.slice(1, -1);   // Remove the quotation marks
+    handleSubmit(undefined, cleanQuery);
   };
 
   const handleLandingSearch = (query: string) => {
@@ -211,10 +211,10 @@ export default function Home() {
         <div className="flex items-center">
           <button
             onClick={resetConversation}
-            className={`p-2 mr-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-dark-bg-secondary text-dark-text' : 'hover:bg-gray-100 text-gray-700'}`}
+            className={`p-3 mr-3 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-dark-bg-secondary text-dark-text' : 'hover:bg-gray-100 text-gray-700'}`}
             title="New conversation"
           >
-            <FiArrowLeft className="w-5 h-5" />
+            <FiArrowLeft className="w-6 h-6" />
           </button>
           <h1 className={`text-xl font-bold ${isDarkMode ? 'text-dark-text' : 'text-gray-900'}`}>
             Movie Maestro
