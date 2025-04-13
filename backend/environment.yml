@@ -1,0 +1,11 @@
+name: plex-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - fastapi
+  - uvicorn
+  - langchain
+  - openai
+  - python-dotenv

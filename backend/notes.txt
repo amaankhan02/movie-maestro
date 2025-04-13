@@ -1,0 +1,14 @@
+# Activate environment
+conda activate answer-env
+
+# Run FastAPI with LangChain
+uvicorn src.main:app --reload [2][4]
+
+# Export environment (optional)
+conda env export > environment.yml
+
+
+^^ run that when tryna run the backend
+
+For LangChain operations, add your OpenAI API key to a .env file:
+OPENAI_API_KEY=your-key-here
