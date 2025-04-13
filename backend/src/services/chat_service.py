@@ -1,12 +1,17 @@
+import asyncio
 import uuid
 from typing import List, Optional, Tuple
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
 from ..config import settings
 from ..models import Citation, Conversation, ImageData, Message, RelatedQuery
+from .query_router_service import QueryRouterService
 from .tmdb_service import TMDbService
+from .wikipedia_service import WikipediaService
 
 
 class ChatService:
@@ -18,15 +23,18 @@ class ChatService:
         )
         self.conversations: dict[str, Conversation] = {}
 
-        # Initialize TMDb service
+        # Initialize services
         self.tmdb_service = TMDbService(api_key=settings.TMDB_API_KEY, llm=self.llm)
+        self.wikipedia_service = WikipediaService(llm=self.llm)
+        self.query_router = QueryRouterService(llm=self.llm)
 
     def _create_system_prompt(self) -> str:
         """Create the system prompt for the LLM."""
         return """You are an expert on Movies and a helpful AI assistant assisting in movie-related queries. 
         Provide accurate and helpful responses. If you don't know something, say so. 
-        Be concise but informative. When citing information from sources like TMDb, use 
-        attribution indicators like [TMDb] at the end of the sentence."""
+        Be concise but informative. When citing information from sources, use 
+        numbered citations like [1], [2], etc. at the end of sentences containing factual information.
+        The numbered citations will reference the source in the citation list at the end of your response."""
 
     def _format_messages(
         self, conversation: Conversation
@@ -48,7 +56,7 @@ class ChatService:
         """Generate related queries based on the conversation history.
 
         The related queries should be relevant follow-up questions that:
-        1. Can be answered using TMDb or comparisons based on chat history
+        1. Can be answered using TMDb, Wikipedia, or comparisons based on chat history
         2. Don't repeat questions already asked
         3. May involve streaming platforms, comparisons, or people mentioned in answers
 
@@ -79,12 +87,16 @@ class ChatService:
         {assistant_responses[-1]}
         
         The related queries should:
-        1. Be answerable using movie database information or based on the current conversation context
+        1. Be answerable using one or more of these sources:
+           - Movie database information (e.g., cast, ratings, release dates)
+           - Wikipedia (e.g., film history, cultural context, themes, analysis)
+           - Current conversation context
         2. Not repeat questions already asked
         3. Focus on one of these categories:
            - Streaming availability (e.g., "What streaming platform is this movie available on?")
-           - Comparisons between movies mentioned (e.g., "Compare [movie1] with [movie2]")
-           - Information about directors/actors mentioned (e.g., "Tell me more about [director/actor]")
+           - Historical context or cultural impact of movies mentioned
+           - Thematic analysis or comparisons between movies mentioned
+           - Information about directors/actors mentioned
            - Similar movies or recommendations
         
         Return exactly 3 related queries in a clear, direct format.
@@ -131,6 +143,95 @@ class ChatService:
         # Convert to RelatedQuery objects
         return [RelatedQuery(text=text) for text in query_texts]
 
+    async def _combine_data_sources(
+        self,
+        query: str,
+        tmdb_result: Optional[Tuple[str, List[Citation], List[ImageData]]] = None,
+        wikipedia_result: Optional[Tuple[str, List[Citation], List[ImageData]]] = None,
+    ) -> Tuple[str, List[Citation], List[ImageData]]:
+        """Combine data from multiple sources and generate a comprehensive response.
+
+        Args:
+            query: The user's query
+            tmdb_result: Optional result from the TMDb service
+            wikipedia_result: Optional result from the Wikipedia service
+
+        Returns:
+            Tuple containing:
+            - combined response text
+            - combined list of citations
+            - combined list of images
+        """
+        all_data = []
+        all_citations = []
+        all_images = []
+
+        # Add TMDb data if available
+        if tmdb_result:
+            tmdb_response, tmdb_citations, tmdb_images = tmdb_result
+            if tmdb_response:
+                all_data.append("TMDb Information:\n" + tmdb_response)
+                all_citations.extend(tmdb_citations or [])
+                all_images.extend(tmdb_images or [])
+
+        # Add Wikipedia data if available
+        if wikipedia_result:
+            wiki_data, wiki_citations, wiki_images = wikipedia_result
+            if wiki_data:
+                all_data.append(wiki_data)
+                # Replace any existing citations with new ones, with updated indices
+                wiki_citation_count = len(wiki_citations or [])
+                if wiki_citation_count > 0:
+                    # Update citation indices for Wikipedia
+                    for i, citation in enumerate(wiki_citations):
+                        # Update the citation title to include the source
+                        if "Wikipedia" not in citation.title:
+                            citation.title = f"{citation.title} - Wikipedia"
+                    all_citations.extend(wiki_citations)
+                    all_images.extend(wiki_images or [])
+
+        # If we don't have any data, return None
+        if not all_data:
+            return "", [], []
+
+        # Create a prompt to generate a combined response
+        template = """
+        You are a helpful AI assistant with access to movie information from multiple sources.
+        
+        User query: {query}
+        
+        Available information:
+        {data}
+        
+        Provide a concise, focused answer to the user's query using only the most relevant information provided.
+        Keep your response under 500 words unless extensive detail is absolutely necessary.
+        
+        When citing specific facts, include a numbered citation like [1], [2], etc. at the end of the sentence containing information from the sources.
+        DO NOT use source names like [TMDb] or [Wikipedia] in the main text, use only numbered citations.
+        
+        Make sure each source has its own citation number, and maintain consistency throughout your answer.
+        For example:
+        - "Inception was directed by Christopher Nolan [1]."
+        - "The film explores themes of reality and dreams [2]."
+        
+        Focus on directly answering the query with the most important information first.
+        If information is available from both sources, prioritize the most relevant details rather than including everything.
+        
+        Only mention contradictions between sources if they are significant and relevant to the query.
+        
+        Your answer:
+        """
+
+        prompt = PromptTemplate.from_template(template)
+        combined_data = "\n\n".join(all_data)
+
+        # Generate the combined response
+        response = await (prompt | self.llm | StrOutputParser()).ainvoke(
+            {"query": query, "data": combined_data}
+        )
+
+        return response, all_citations, all_images
+
     async def get_response(
         self, message: str, conversation_id: Optional[str] = None
     ) -> Tuple[
@@ -165,20 +266,60 @@ class ChatService:
         self.conversations[conversation_id].messages.append(user_message)
 
         try:
-            # First, try to process as a movie query using TMDb service
-            tmdb_response, citations, images = (
-                await self.tmdb_service.process_movie_query(message, conversation_id)
+            # First, route the query to determine which data sources to use
+            routing_decision = await self.query_router.route_query(message)
+
+            # Apply config settings to routing decision
+            use_tmdb = routing_decision.get("use_tmdb", True) and settings.ENABLE_TMDB
+            use_wikipedia = (
+                routing_decision.get("use_wikipedia", False)
+                and settings.ENABLE_WIKIPEDIA
             )
 
-            if tmdb_response:
-                # If we got a response from TMDb, use it
-                response_text = tmdb_response
-            else:
-                # Otherwise, fall back to regular LLM response
-                # Format messages for LLM
-                messages = self._format_messages(self.conversations[conversation_id])
+            print(f"Using data sources - TMDB: {use_tmdb}, Wikipedia: {use_wikipedia}")
 
-                # Get response from LLM
+            tmdb_result = None
+            wikipedia_result = None
+
+            # Use asyncio.gather to process data sources in parallel when possible
+            data_source_tasks = []
+
+            # Process with TMDb if needed
+            if use_tmdb:
+                print("Fetching data from TMDb...")
+                tmdb_task = self.tmdb_service.process_movie_query(
+                    message, conversation_id
+                )
+                data_source_tasks.append(tmdb_task)
+
+            # Process with Wikipedia if needed
+            if use_wikipedia:
+                print("Fetching data from Wikipedia...")
+                wiki_task = self.wikipedia_service.process_wikipedia_query(
+                    message, conversation_id
+                )
+                data_source_tasks.append(wiki_task)
+
+            # Wait for all data source tasks to complete
+            if data_source_tasks:
+                results = await asyncio.gather(*data_source_tasks)
+
+                # Assign results to their respective variables
+                result_index = 0
+                if use_tmdb:
+                    tmdb_result = results[result_index]
+                    result_index += 1
+                if use_wikipedia:
+                    wikipedia_result = results[result_index]
+
+            # If we have data from at least one source, combine them
+            if tmdb_result or wikipedia_result:
+                response_text, citations, images = await self._combine_data_sources(
+                    message, tmdb_result, wikipedia_result
+                )
+            else:
+                # If no special data is needed, fall back to regular LLM response
+                messages = self._format_messages(self.conversations[conversation_id])
                 response = await self.llm.agenerate([messages])
                 response_text = response.generations[0][0].text
                 citations = None

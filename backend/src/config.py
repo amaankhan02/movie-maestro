@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     MODEL_NAME: str = "gpt-4"  # TODO: change to whatever is the cheapest model for now
     MODEL_TEMPERATURE: float = 0.3
 
+    # Data Source Settings
+    ENABLE_TMDB: bool = True
+    ENABLE_WIKIPEDIA: bool = True
+
     # RAG Settings - TODO: implement this later
     VECTOR_DB_PATH: Optional[str] = None
     CHUNK_SIZE: int = 1000
