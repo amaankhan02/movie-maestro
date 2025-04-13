@@ -5,10 +5,11 @@ import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi';
 import { sendMessage } from '../services/api';
-import { Message } from '../types';
+import { Message, RelatedQuery } from '../types';
 import LandingPage from '../components/LandingPage';
 import Citation from '../components/Citation';
 import ImageGallery from '../components/ImageGallery';
+import RelatedQueries from '../components/RelatedQueries';
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,6 +19,7 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [conversationId, setConversationId] = useState<string>();
   const [showLanding, setShowLanding] = useState(true);
+  const [relatedQueries, setRelatedQueries] = useState<RelatedQuery[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +54,9 @@ export default function Home() {
     const message = initialQuery || input;
     if (!message.trim() || isLoading) return;
 
+    // Clear related queries when a new question is asked
+    setRelatedQueries([]);
+
     // If we're on the landing page, transition to chat view
     if (showLanding) {
       setShowLanding(false);
@@ -84,6 +89,11 @@ export default function Home() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      
+      // Set related queries after response is displayed
+      if (response.related_queries && response.related_queries.length > 0) {
+        setRelatedQueries(response.related_queries);
+      }
     } catch (error) {
       const errorMessage: Message = {
         role: 'assistant',
@@ -98,12 +108,20 @@ export default function Home() {
     }
   };
 
+  const handleRelatedQueryClick = (query: string) => {
+    // When a related query is clicked, submit it as a new user query
+    handleSubmit(undefined, query);
+  };
+
   const handleLandingSearch = (query: string) => {
     handleSubmit(undefined, query);
   };
 
   const handleRetry = async (messageIndex: number) => {
     if (isLoading) return;
+    
+    // Clear related queries when retry is attempted
+    setRelatedQueries([]);
     
     setIsLoading(true);
     setIsTyping(true);
@@ -129,6 +147,11 @@ export default function Home() {
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+        
+        // Set related queries after response is displayed
+        if (response.related_queries && response.related_queries.length > 0) {
+          setRelatedQueries(response.related_queries);
+        }
       }
     } catch (error) {
       const errorMessage: Message = {
@@ -155,6 +178,7 @@ export default function Home() {
   const resetConversation = () => {
     setMessages([]);
     setConversationId(undefined);
+    setRelatedQueries([]);
     setShowLanding(true);
   };
 
@@ -327,6 +351,18 @@ export default function Home() {
             </div>
           </div>
         )}
+        
+        {/* Related Queries - shown only after a response and when not typing */}
+        {!isTyping && relatedQueries.length > 0 && (
+          <div className="flex justify-end">
+            <RelatedQueries 
+              queries={relatedQueries} 
+              isDarkMode={isDarkMode} 
+              onQueryClick={handleRelatedQueryClick} 
+            />
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
 

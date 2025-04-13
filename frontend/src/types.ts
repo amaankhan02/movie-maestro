@@ -10,6 +10,10 @@ export interface ImageData {
   caption?: string;
 }
 
+export interface RelatedQuery {
+  text: string;
+}
+
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -34,4 +38,5 @@ export interface ChatResponse {
   timestamp: string; // the timestamp of the response
   citations?: Citation[]; // optional citations
   images?: ImageData[]; // optional images
+  related_queries?: RelatedQuery[]; // optional related query suggestions
 }
