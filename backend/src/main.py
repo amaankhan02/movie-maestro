@@ -1,9 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
-from .config import settings
-from .models import ChatRequest, ChatResponse, Message
-from .services.chat_service import ChatService
+from src.config import settings
+from src.models import ChatRequest, ChatResponse, Message
+from src.services.chat_service import ChatService
 
 app = FastAPI(title="Movie Maestro API")
 
@@ -22,7 +21,7 @@ chat_service = ChatService()
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Process a chat message and return the AI's response. 
+    """Process a chat message and return the AI's response.
     Creates a POST endpoint for the frontend to send messages to the backend.
 
     Args:
@@ -48,7 +47,7 @@ async def chat(request: ChatRequest):
 @app.get("/conversation/{conversation_id}", response_model=list[Message])
 async def get_conversation(conversation_id: str):
     """Retrieve the history of a specific conversation.
-    Creates a GET endpoint for the frontend to retrieve the 
+    Creates a GET endpoint for the frontend to retrieve the
     history of a specific conversation.
 
     Args:
@@ -69,4 +68,6 @@ async def get_conversation(conversation_id: str):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host=settings.API_HOST, port=settings.API_PORT, reload=True)
+    uvicorn.run(
+        "src.main:app", host=settings.API_HOST, port=settings.API_PORT, reload=True
+    )
