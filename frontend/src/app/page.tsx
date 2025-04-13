@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
-import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi';
+import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft, FiChevronDown } from 'react-icons/fi';
 import { sendMessage } from '../services/api';
 import { Message, RelatedQuery } from '../types';
 import LandingPage from '../components/LandingPage';
@@ -16,11 +16,12 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [conversationId, setConversationId] = useState<string>();
   const [showLanding, setShowLanding] = useState(true);
   const [relatedQueries, setRelatedQueries] = useState<RelatedQuery[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const relatedQueriesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,6 +36,10 @@ export default function Home() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollToRelatedQueries = () => {
+    document.getElementById('related-queries')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -305,8 +310,8 @@ export default function Home() {
                 {/* Citations */}
                 {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
                   <div className="mt-4 border-t pt-2 space-y-1">
-                    <h4 className={`text-xs font-medium ${
-                      isDarkMode ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-200'
+                    <h4 className={`text-lg font-semibold mb-2 ${
+                      isDarkMode ? 'text-gray-300 border-gray-700' : 'text-gray-700 border-gray-200'
                     }`}>
                       Sources
                     </h4>
@@ -318,6 +323,20 @@ export default function Home() {
                         isDarkMode={isDarkMode} 
                       />
                     ))}
+                  </div>
+                )}
+                
+                {/* Related Queries Anchor Link */}
+                {message.role === 'assistant' && relatedQueries.length > 0 && (
+                  <div className="mt-3">
+                    <button 
+                      onClick={scrollToRelatedQueries}
+                      className={`text-sm underline hover:no-underline transition-colors ${
+                        isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+                      }`}
+                    >
+                      View related queries
+                    </button>
                   </div>
                 )}
               </div>
@@ -335,7 +354,11 @@ export default function Home() {
         {isTyping && (
           <div className="flex justify-start">
             <div
-              className={`rounded-2xl rounded-tl-none p-4 bg-white dark:bg-dark-bg-secondary border dark:border-dark-border shadow-sm`}
+              className={`rounded-2xl rounded-tl-none p-4 ${
+                isDarkMode 
+                  ? 'bg-gray-800 border-gray-700' 
+                  : 'bg-white border-gray-200'
+              } border shadow-sm`}
             >
               <div className="flex space-x-2">
                 <div className={`w-2 h-2 rounded-full animate-bounce ${
@@ -354,7 +377,7 @@ export default function Home() {
         
         {/* Related Queries - shown only after a response and when not typing */}
         {!isTyping && relatedQueries.length > 0 && (
-          <div className="flex justify-end">
+          <div ref={relatedQueriesRef} className="flex justify-end">
             <RelatedQueries 
               queries={relatedQueries} 
               isDarkMode={isDarkMode} 
