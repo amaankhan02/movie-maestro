@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 
-from pydantic import Field
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -28,17 +28,14 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
 
     # frontend URL to allow the backend to be accessed from the frontend
-    CORS_ORIGINS: List[str] = Field(
-        default=["http://localhost:3000"],
-        description="Comma-separated list of allowed CORS origins",
-    )
+    CORS_ORIGINS: str = "http://localhost:3000"
 
-    @property
-    def cors_origins(self) -> List[str]:
-        """Get CORS origins from environment variable or use default."""
-        if "CORS_ORIGINS" in os.environ:
-            return os.environ["CORS_ORIGINS"].split(",")
-        return self.CORS_ORIGINS
+    @field_validator("CORS_ORIGINS")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",")]
+        return v
 
     class Config:
         env_file = ".env"
