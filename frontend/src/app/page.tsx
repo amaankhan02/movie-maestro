@@ -251,11 +251,11 @@ export default function Home() {
                     ? 'mr-12 md:mr-24 bg-gray-800 border-gray-700 text-gray-200 shadow-sm rounded-2xl rounded-tl-none'
                     : 'mr-12 md:mr-24 bg-gray-100 border border-gray-200 text-gray-800 shadow-sm rounded-2xl rounded-tl-none'
               } overflow-hidden ${
-                message.images && message.images.length > 0 ? 'max-w-full' : 'max-w-[85%]'
+                message.images && message.images.length > 0 ? 'max-w-full' : 'max-w-[65%]'
               }`}
             >
               <div className={`p-4 ${
-                message.images && message.images.length > 0 ? 'md:max-w-[60%]' : 'w-full'
+                message.images && message.images.length > 0 ? 'md:max-w-[60%]' : 'max-w-full'
               }`}>
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className={`text-xs font-medium ${
@@ -294,7 +294,7 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-                <div className={`prose max-w-none text-lg font-medium ${
+                <div className={`prose text-lg font-medium ${
                   isDarkMode 
                     ? message.role === 'user' ? 'text-gray-100' : 'text-gray-200'
                     : 'text-gray-800'
