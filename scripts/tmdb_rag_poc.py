@@ -193,7 +193,7 @@ def movie_query_assistant(query: str, tmdb_api_key: str, llm):
 
 # Example usage
 if __name__ == "__main__":
-    TMDB_API_KEY = "" 
+    TMDB_API_KEY = ""
     OPENAI_API_KEY = ""
     llm = ChatOpenAI(
         temperature=0.3, model="gpt-4", openai_api_key=OPENAI_API_KEY
@@ -204,7 +204,7 @@ if __name__ == "__main__":
         "Tell me about the movie Interstellar",
         "Who directed Inception?",
         # "What are some movies like The Dark Knight?",
-        "What's the capital of France?"  # Non-movie query
+        "What's the capital of France?",  # Non-movie query
     ]
 
     for query in example_queries:

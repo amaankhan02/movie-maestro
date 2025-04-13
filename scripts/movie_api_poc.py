@@ -51,7 +51,12 @@ def test_fetch_tmdb_data():
         f"Director: {[crew['name'] for crew in movie_data['credits']['crew'] if crew['job'] == 'Director']}\n"
         f"Cast: {[member['name'] for member in movie_data['credits']['cast'][:5]]}\n"
         f"Themes: {[kw['name'] for kw in movie_data['keywords']['keywords']]}\n"
-        f"Watch Providers: {movie_data['watch/providers']['results']['US']['flatrate']}"
+        f"Watch Providers: {movie_data['watch/providers']['results']['US']['flatrate']}\n"
+        f"Release Date: {movie_data['release_date']}\n"
+        f"Rating: {movie_data['vote_average']}/10\n"
+        f"Genres: {[genre['name'] for genre in movie_data['genres']]}\n"
+        f"Images: {[image['file_path'] for image in movie_data['images']['backdrops']]}\n"
+        f"Poster: {movie_data['poster_path']}\n"
         # Watch Providers actually shows a 'logo_path' field for different providers, so you can probably embed that as well if you want
     )
 
