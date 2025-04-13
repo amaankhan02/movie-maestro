@@ -7,6 +7,7 @@ from src.services.chat_service import ChatService
 app = FastAPI(title="Movie Maestro API")
 
 # Configure CORS
+print(f"CORS_ORIGINS: {settings.CORS_ORIGINS}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -71,6 +72,12 @@ async def get_conversation(conversation_id: str):
     if history is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return history
+
+
+@app.get("/debug-cors")
+async def debug_cors():
+    """Debug endpoint to check CORS configuration"""
+    return {"cors_origins": settings.CORS_ORIGINS}
 
 
 if __name__ == "__main__":
