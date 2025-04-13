@@ -98,7 +98,9 @@ class QueryRouterService:
 
             # Extract routing decisions
             use_tmdb = analysis.get("tmdb", {}).get("needed", False)
-            use_wikipedia = analysis.get("wikipedia", {}).get("needed", False)
+
+            # Always use Wikipedia
+            use_wikipedia = True
 
             # Return routing decisions
             return {"use_tmdb": use_tmdb, "use_wikipedia": use_wikipedia}

@@ -24,6 +24,7 @@ class WikipediaService:
         self.search_url = "https://en.wikipedia.org/w/api.php"
         self.analyzer_chain = self._create_query_analyzer_chain()
         self.summarizer_chain = self._create_content_summarizer_chain()
+        self.search_term_generator = self._create_search_term_generator()
         self.wiki_history = {}  # Track Wikipedia topics queried by conversation_id
         self.cache = {}  # Simple in-memory cache for Wikipedia articles
 
@@ -79,6 +80,28 @@ class WikipediaService:
         - Redundant information
         
         Your summary:
+        """
+
+        prompt = PromptTemplate.from_template(template)
+        return prompt | self.llm | StrOutputParser()
+
+    def _create_search_term_generator(self):
+        """Creates a chain that generates appropriate Wikipedia search terms for a query."""
+        template = """
+        Given a user query that needs Wikipedia information but lacks specific search terms,
+        generate 1-3 effective search terms for Wikipedia that would find relevant articles.
+        
+        For movie-related queries requesting recommendations, lists, or general information,
+        try to identify category articles, film genres, or specific topics that Wikipedia would have articles about.
+        
+        User query: {query}
+        
+        Examples:
+        - For "what are good family movies", appropriate search terms might be ["family film", "children's film genre", "G-rated movies"]
+        - For "action movies with car chases", appropriate search terms might be ["car chase sequences", "action film", "automotive action scenes"]
+        - For "movies about time travel", appropriate search terms might be ["time travel in fiction", "time travel films", "science fiction film"]
+        
+        Respond with a JSON array of 1-3 search terms that would find relevant Wikipedia articles:
         """
 
         prompt = PromptTemplate.from_template(template)
@@ -217,7 +240,7 @@ class WikipediaService:
     async def process_wikipedia_query(
         self, query: str, conversation_id: Optional[str] = None
     ) -> Tuple[Optional[str], Optional[List[Citation]], Optional[List[ImageData]]]:
-        """Process a query, determine if Wikipedia data is needed, and fetch the relevant information.
+        """Process a query and fetch relevant information from Wikipedia.
 
         Args:
             query: User query
@@ -225,7 +248,7 @@ class WikipediaService:
 
         Returns:
             Tuple containing:
-            - Wikipedia data formatted as a string or None if not Wikipedia related
+            - Wikipedia data formatted as a string or None if not found
             - list of citations or None
             - list of images or None
         """
@@ -233,24 +256,59 @@ class WikipediaService:
         if conversation_id and conversation_id not in self.wiki_history:
             self.wiki_history[conversation_id] = []
 
-        # Analyze if this query needs Wikipedia data
-        analysis_result = await self.analyzer_chain.ainvoke({"query": query})
+        # Extract potential search terms directly from the query
+        search_terms = []
 
-        try:
-            # Parse the analysis
-            analysis = json.loads(analysis_result)
-            needs_wikipedia = analysis.get("needs_wikipedia_data", False)
-            search_terms = analysis.get("search_terms", [])
-            is_movie_related = analysis.get("is_movie_related", False)
-        except Exception as e:
-            print(f"Error parsing Wikipedia analysis result: {e}")
-            return None, None, None
+        # Try to use the query directly as a search term
+        clean_query = query.strip().rstrip("?")
+        if len(clean_query.split()) <= 5:  # If the query is short enough
+            search_terms.append(clean_query)
 
-        # If we don't need Wikipedia data, return None
-        if not needs_wikipedia or not search_terms:
+        # If no direct search terms or query is too long, generate search terms using LLM
+        if not search_terms or len(clean_query.split()) > 5:
+            try:
+                print(f"Generating search terms with LLM for query: {query}")
+                search_terms_result = await self.search_term_generator.ainvoke(
+                    {"query": query}
+                )
+
+                # Parse the JSON array of search terms
+                try:
+                    generated_terms = json.loads(search_terms_result)
+                    if generated_terms and isinstance(generated_terms, list):
+                        search_terms = generated_terms
+                        print(f"Generated search terms: {search_terms}")
+                    else:
+                        # If not a list or empty, try to extract from non-JSON text
+                        fallback_terms = [
+                            term.strip() for term in search_terms_result.split(",")
+                        ]
+                        fallback_terms = [term for term in fallback_terms if term]
+                        if fallback_terms:
+                            search_terms = fallback_terms
+                            print(f"Extracted search terms from text: {search_terms}")
+                except Exception as e:
+                    # Fallback in case we don't get valid JSON
+                    print(f"Error parsing generated search terms: {e}")
+                    # Try to extract terms by splitting the text
+                    fallback_terms = [
+                        term.strip() for term in search_terms_result.split(",")
+                    ]
+                    fallback_terms = [term for term in fallback_terms if term]
+                    if fallback_terms:
+                        search_terms = fallback_terms
+            except Exception as e:
+                print(f"Error generating search terms: {e}")
+                # Last fallback: use the query itself
+                search_terms = [clean_query]
+
+        # If we still have no search terms, return None
+        if not search_terms:
+            print("No search terms could be generated. Returning empty result.")
             return None, None, None
 
         print(f"Using extended mode for Wikipedia query: {query}")
+        print(f"Search terms: {search_terms}")
 
         # Get the Wikipedia search results
         all_article_data = []
