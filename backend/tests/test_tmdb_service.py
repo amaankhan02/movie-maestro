@@ -66,4 +66,5 @@ async def test_tmdb_service():
 
 
 if __name__ == "__main__":
+    # Run the basic test
     asyncio.run(test_tmdb_service())

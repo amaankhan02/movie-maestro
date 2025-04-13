@@ -1,8 +1,7 @@
 import uuid
 from typing import List, Optional, Tuple
 
-from langchain.memory import ConversationBufferMemory
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from ..config import settings
@@ -72,7 +71,7 @@ class ChatService:
         try:
             # First, try to process as a movie query using TMDb service
             tmdb_response, citations, images = (
-                await self.tmdb_service.process_movie_query(message)
+                await self.tmdb_service.process_movie_query(message, conversation_id)
             )
 
             if tmdb_response:
