@@ -3,9 +3,7 @@ Perplexity Take-Home Project for Amaan Khan
 
 A specialized movie answer engine built for Perplexity's Residency Program. This application intelligently answers movie-related queries using data from multiple sources, providing detailed, accurate information with citations and visual content.
 
-<div align="center">
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/P-_kBeSJrHk" title="Movie Maestro Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div>
+Demo Video: https://www.youtube.com/embed/P-_kBeSJrHk
 
 ## Features
 
