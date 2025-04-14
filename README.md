@@ -8,7 +8,7 @@ A specialized movie answer engine built for Perplexity's Residency Program. This
 - **Multiple Data Sources**: Integrates TMDb and Wikipedia for comprehensive movie information
 - **Intelligent API Selection**: Dynamically selects the appropriate TMDb API endpoint based on query context
 - **Advanced LLM Integration**: Powered by GPT-4 for natural language understanding and response generation
-- **Citations & Sources**: All information is properly attributed with citations to original sources
+- **Citations & Sources**: All information is properly attributed with citations to original sources.This is done using Few-Shot Prompt Engineering techniques to ensure that answers are backed by a source and are not hallucinated.
 - **Related Queries**: Suggests related questions users might want to explore
 - **Rich Media Support**: Includes relevant movie images, posters, and other visual content
 - **Conversation History**: Supports multi-turn and follow-up queries by maintaining context
