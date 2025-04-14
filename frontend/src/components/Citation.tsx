@@ -9,7 +9,7 @@ interface CitationProps {
   isDarkMode: boolean;
 }
 
-export default function Citation({ citation, index, isDarkMode }: CitationProps) {
+export default function Citation({ citation, index, isDarkMode }: CitationProps): React.ReactElement {
   const [isExpanded, setIsExpanded] = useState(false);
   const [needsTruncation, setNeedsTruncation] = useState(false);
   const textRef = useRef<HTMLParagraphElement>(null);

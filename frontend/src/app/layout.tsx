@@ -21,7 +21,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>): React.ReactElement {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900`}>

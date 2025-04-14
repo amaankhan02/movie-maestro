@@ -7,7 +7,7 @@ interface LandingPageProps {
   isDarkMode: boolean;
 }
 
-export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps) {
+export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps): React.ReactElement {
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {

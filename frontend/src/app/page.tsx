@@ -5,14 +5,14 @@ import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi';
 import { sendMessage } from '../services/api';
-import { smoothScrollTo, customScrollIntoView } from '../services/scrollUtils';
+import { customScrollIntoView } from '../services/scrollUtils';
 import { Message, RelatedQuery } from '../types';
 import LandingPage from '../components/LandingPage';
 import Citation from '../components/Citation';
 import ImageGallery from '../components/ImageGallery';
 import RelatedQueries from '../components/RelatedQueries';
 
-export default function Home() {
+export default function Home(): React.ReactElement {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

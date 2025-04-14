@@ -9,7 +9,7 @@
  * @param offset Optional offset from the target
  * @param delay Delay in milliseconds before scrolling begins
  */
-export function smoothScrollTo(element: HTMLElement | null, duration: number = 2000, offset: number = 0, delay: number = 0) {
+export function smoothScrollTo(element: HTMLElement | null, duration: number = 2000, offset: number = 0, delay: number = 0): void {
   if (!element) return;
   
   setTimeout(() => {
@@ -18,7 +18,7 @@ export function smoothScrollTo(element: HTMLElement | null, duration: number = 2
     const distance = targetPosition - startPosition;
     let startTime: number | null = null;
 
-    function animation(currentTime: number) {
+    function animation(currentTime: number): void {
       if (startTime === null) startTime = currentTime;
       const timeElapsed = currentTime - startTime;
       const progress = Math.min(timeElapsed / duration, 1);
@@ -51,7 +51,7 @@ export function customScrollIntoView(element: HTMLElement | null, options: {
   behavior?: ScrollBehavior,
   block?: ScrollLogicalPosition, 
   inline?: ScrollLogicalPosition
-} = {}, delay: number = 0) {
+} = {}, delay: number = 0): void {
   if (!element) return;
   
   setTimeout(() => {

@@ -9,7 +9,7 @@ interface ImageGalleryProps {
   isDarkMode: boolean;
 }
 
-export default function ImageGallery({ images, isDarkMode }: ImageGalleryProps) {
+export default function ImageGallery({ images, isDarkMode }: ImageGalleryProps): React.ReactElement | null {
   const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
 
   if (!images || images.length === 0) {
