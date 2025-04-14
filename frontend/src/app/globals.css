@@ -11,6 +11,7 @@
   --user-message-text: #1f2937;
   --assistant-message-bg: #f3f4f6;
   --assistant-message-text: #1f2937;
+  --scroll-speed: 2000ms; /* Slow scroll speed (default browser is ~200-250ms) */
 }
 
 @theme inline {
@@ -43,6 +44,23 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+/* Custom smooth scrolling behavior */
+html {
+  scroll-behavior: smooth;
+  scroll-timeline: --page-scroll block;
+}
+
+/* Apply custom slower scrolling to all smooth scrolls */
+@keyframes smoothScroll {
+  from { scroll-behavior: auto; }
+  to { scroll-behavior: smooth; }
+}
+
+* {
+  transition-duration: var(--scroll-speed);
 }
 
 /* Typography */

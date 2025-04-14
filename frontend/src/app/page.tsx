@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { FiCopy, FiRefreshCw, FiSun, FiMoon, FiArrowLeft } from 'react-icons/fi';
 import { sendMessage } from '../services/api';
+import { smoothScrollTo, customScrollIntoView } from '../services/scrollUtils';
 import { Message, RelatedQuery } from '../types';
 import LandingPage from '../components/LandingPage';
 import Citation from '../components/Citation';
@@ -35,11 +36,33 @@ export default function Home() {
   }, [isDarkMode]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      customScrollIntoView(messagesEndRef.current, {
+        behavior: 'smooth',
+        block: 'end'
+      }, 100);
+    }
   };
 
   const scrollToRelatedQueries = () => {
-    document.getElementById('related-queries')?.scrollIntoView({ behavior: 'smooth' });
+    // Use a small timeout to ensure the element is fully rendered before scrolling
+    setTimeout(() => {
+      const element = document.getElementById('related-queries');
+      if (element) {
+        // Use a more reliable approach with simpler parameters
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Apply custom scroll speed through CSS
+        document.documentElement.style.setProperty('--scroll-speed', '2000ms');
+        
+        // Reset the CSS property after scrolling completes
+        setTimeout(() => {
+          document.documentElement.style.removeProperty('--scroll-speed');
+        }, 2500);
+      } else {
+        console.log('Related queries element not found');
+      }
+    }, 100);
   };
 
   useEffect(() => {
@@ -330,10 +353,15 @@ export default function Home() {
                 {message.role === 'assistant' && relatedQueries.length > 0 && (
                   <div className="mt-3">
                     <button 
-                      onClick={scrollToRelatedQueries}
-                      className={`text-sm underline hover:no-underline transition-colors ${
-                        isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
-                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        scrollToRelatedQueries();
+                      }}
+                      className={`text-sm font-medium px-3 py-1.5 rounded-full ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-blue-300 hover:bg-gray-600' 
+                          : 'bg-gray-50 text-blue-600 hover:bg-gray-100'
+                      } transition-colors`}
                     >
                       View related queries
                     </button>
