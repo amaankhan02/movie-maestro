@@ -107,7 +107,7 @@ Visit `http://localhost:3000` to use the application.
 
 ## Architecture
 
-![Movie Maestro Architecture](images/Architecture-Movie-Maestro.jpg)
+![Movie Maestro Architecture](architecture-diagram.jpg)
 
 The application follows a client-server architecture:
 
