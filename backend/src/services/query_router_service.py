@@ -99,7 +99,7 @@ class QueryRouterService:
             # Extract routing decisions
             use_tmdb = analysis.get("tmdb", {}).get("needed", False)
 
-            # Always use Wikipedia
+            # Change to always use Wikipedia for now
             use_wikipedia = True
 
             # Return routing decisions

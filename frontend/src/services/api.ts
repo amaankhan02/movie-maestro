@@ -34,6 +34,7 @@ export const sendMessage = async (
     }
 
     // return the response from the backend
+    // convert the JSON response to a TypeScript object (ChatResponse)
     return await response.json();
   } catch (error) {
     // if there's an error, throw an error

@@ -40,7 +40,13 @@ class ChatService:
     def _format_messages(
         self, conversation: Conversation
     ) -> List[SystemMessage | HumanMessage | AIMessage]:
-        """Format conversation messages for the LLM."""
+        """Format conversation messages for the LLM.
+        
+        Purpose of this function is to convert our list of Message objects
+        to a list of message object types that LangChain takes in. That is,
+        we create a list of messages that are a combination of types
+        SystemMessage, HumanMessage, AIMessage
+        """
         messages = [SystemMessage(content=self._create_system_prompt())]
 
         for msg in conversation.messages:
@@ -110,7 +116,7 @@ class ChatService:
             ),
             HumanMessage(content=related_query_prompt),
         ]
-
+        
         # Generate related queries
         response = await self.llm.agenerate([messages])
         response_text = response.generations[0][0].text
@@ -136,6 +142,7 @@ class ChatService:
 
         # Ensure we have exactly 3 queries
         query_texts = query_texts[:3]
+        
         while len(query_texts) < 3:
             query_texts.append(
                 f"Tell me more about another movie like {user_questions[-1]}"
@@ -151,6 +158,9 @@ class ChatService:
         wikipedia_result: Optional[Tuple[str, List[Citation], List[ImageData]]] = None,
     ) -> Tuple[str, List[Citation], List[ImageData]]:
         """Combine data from multiple sources and generate a comprehensive response.
+        
+        Used in the case where we have to use one or more data sources. If we are not
+        using a data source, then this function is not used
 
         Args:
             query: The user's query
@@ -176,6 +186,9 @@ class ChatService:
                 all_images.extend(tmdb_images or [])
 
         # Add Wikipedia data if available
+        # 1. Combine Wikipedia data with other sources (like TMDb)
+        # 2. Ensure citations are properly labeled with their source
+        # 3. Collect all citations and images in one place for the final response
         if wikipedia_result:
             wiki_data, wiki_citations, wiki_images = wikipedia_result
             if wiki_data:
@@ -227,6 +240,8 @@ class ChatService:
         combined_data = "\n\n".join(all_data)
 
         # Generate the combined response
+        # {query: ... , data: ... } -> prompt formats using the input data -> self.llm generates response -> StrOutputParser() parses response
+        # ainvoke creates a chain of the above components and then invokes it with the input data, in an asynchronous manner
         response = await (prompt | self.llm | StrOutputParser()).ainvoke(
             {"query": query, "data": combined_data}
         )
@@ -249,19 +264,24 @@ class ChatService:
             return []
 
         # Extract citation numbers from response text using regex
-        citation_pattern = r"\[(\d+)\]"
+        citation_pattern = r"\[(\d+)\]"  # find [1], or any number b/w the brackets
+        
+        # this would return like 1, 2, etc if there are [1], [2] in the text
         citation_matches = re.findall(citation_pattern, response_text)
 
+        # convert those numbers into a set of unique numbers
         used_citation_indices = set(int(idx) for idx in citation_matches)
 
         used_citations = []
         for idx in used_citation_indices:
             # Citation numbers are 1-indexed, but list indices are 0-indexed
             citation_idx = idx - 1
+            # sanity check - confirm that the number is in fact a valid citation 
+            # by checking its within the bounds
             if 0 <= citation_idx < len(citations):
                 used_citations.append(citations[citation_idx])
 
-        return used_citations
+        return used_citations   # return the list of citations themselves, not the indices
 
     async def get_response(
         self, message: str, conversation_id: Optional[str] = None
@@ -314,10 +334,13 @@ class ChatService:
 
             # Use asyncio.gather to process data sources in parallel when possible
             data_source_tasks = []
+            # * so we are getting 'tasks' here through the 'process' function.
+            # * but what is the difference between a task and actually fetching the data?
 
             # Process with TMDb if needed
             if use_tmdb:
                 print("Fetching data from TMDb...")
+                # Create an async task (does not execute right now)
                 tmdb_task = self.tmdb_service.process_movie_query(
                     message, conversation_id
                 )
@@ -326,6 +349,7 @@ class ChatService:
             # Process with Wikipedia if needed
             if use_wikipedia:
                 print("Fetching data from Wikipedia...")
+                # Create an async task (does not execute right now)
                 wiki_task = self.wikipedia_service.process_wikipedia_query(
                     message, conversation_id
                 )
@@ -333,6 +357,8 @@ class ChatService:
 
             # Wait for all data source tasks to complete
             if data_source_tasks:
+                # Execute all the asyncronous tasks in parallel 
+                # through the asyncio.gather function
                 results = await asyncio.gather(*data_source_tasks)
 
                 # Assign results to their respective variables
@@ -360,7 +386,8 @@ class ChatService:
                 citations = None
                 images = None
 
-            # Add assistant message to conversation
+            # Add the response we just generated from the LLM as the 
+            # assistant message to the conversation
             assistant_message = Message(
                 role="assistant",
                 content=response_text,
@@ -370,6 +397,7 @@ class ChatService:
             self.conversations[conversation_id].messages.append(assistant_message)
 
             # Generate related queries based on conversation history
+            # most recent 2-3 messages or something - not the entire conversation
             related_queries = await self._generate_related_queries(
                 self.conversations[conversation_id]
             )

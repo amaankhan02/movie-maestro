@@ -15,8 +15,8 @@ import RelatedQueries from '../components/RelatedQueries';
 export default function Home(): React.ReactElement {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);  // true when a request is in progress. prevents multiple submissions
+  const [isTyping, setIsTyping] = useState(false);   // when the assistant is generating a response
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [conversationId, setConversationId] = useState<string>();
   const [showLanding, setShowLanding] = useState(true);
@@ -71,15 +71,19 @@ export default function Home(): React.ReactElement {
 
   // Focus input field when chat view is shown
   useEffect(() => {
+    // Only when in the chat interface page (i.e, !showLanding)
+    // focus on the input textbox
     if (!showLanding && inputRef.current) {
       inputRef.current.focus();
     }
   }, [showLanding]);
 
   const handleSubmit = async (e?: React.FormEvent, initialQuery?: string) => {
+    // optional initial query for direct function calls instead of a form submission
     if (e) e.preventDefault();
     
-    const message = initialQuery || input;
+    // use initialQuery if provided, otherwise use the user input that they typed in
+    const message = initialQuery || input;  
     if (!message.trim() || isLoading) return;
 
     // Clear related queries when a new question is asked
@@ -102,6 +106,7 @@ export default function Home(): React.ReactElement {
     setIsTyping(true);
 
     try {
+      // send the message to the backend and get back the response
       const response = await sendMessage(message, conversationId);
       
       if (!conversationId) {
@@ -118,7 +123,7 @@ export default function Home(): React.ReactElement {
 
       setMessages((prev) => [...prev, assistantMessage]);
       
-      // Set related queries after response is displayed
+      // Set related queries if we get it
       if (response.related_queries && response.related_queries.length > 0) {
         setRelatedQueries(response.related_queries);
       }
@@ -210,6 +215,7 @@ export default function Home(): React.ReactElement {
     setShowLanding(true);
   };
 
+  // Landing Page
   if (showLanding) {
     return (
       <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
@@ -233,10 +239,13 @@ export default function Home(): React.ReactElement {
     );
   }
 
+  // Chat Interface Page
   return (
     <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+      {/* Top Navigation Header which has the back button and the title */}
       <header className={`py-4 px-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-between items-center sticky top-0 z-10 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="flex items-center">
+          {/* Back Button */}
           <button
             onClick={resetConversation}
             className={`p-3 mr-3 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-dark-bg-secondary text-dark-text' : 'hover:bg-gray-100 text-gray-700'}`}
@@ -244,10 +253,14 @@ export default function Home(): React.ReactElement {
           >
             <FiArrowLeft className="w-6 h-6" />
           </button>
+
+          {/* Title - "Movie Maestro" on the top */}
           <h1 className={`text-xl font-bold ${isDarkMode ? 'text-dark-text' : 'text-gray-900'}`}>
             Movie Maestro
           </h1>
         </div>
+
+        {/* Dark Mode Toggle Button */}
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
           className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-dark-bg-secondary' : 'hover:bg-gray-100'}`}
@@ -260,15 +273,18 @@ export default function Home(): React.ReactElement {
           )}
         </button>
       </header>
-
+        
+      {/* Main screen consisting of the chat messages */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
         {messages.map((message, index) => (
+          // Outer div: handles horizontal positining of the entire message bubble
           <div
             key={index}
             className={`flex ${
               message.role === 'user' ? 'justify-end' : 'justify-start'
             } ${index > 0 ? 'mt-6' : ''}`}
           >
+            {/* Contains all the styling for the message bubble itself */}
             <div
               className={`${
                 message.role === 'user'
@@ -286,6 +302,7 @@ export default function Home(): React.ReactElement {
                 message.images && message.images.length > 0 ? 'md:max-w-[60%]' : 'max-w-full'
               }`}>
                 <div className="flex items-center justify-between gap-2 mb-2">
+                  {/* Date Text */}
                   <span className={`text-xs font-medium ${
                     message.role === 'user' 
                       ? isDarkMode ? 'text-gray-300' : 'text-gray-600'
@@ -293,8 +310,11 @@ export default function Home(): React.ReactElement {
                   }`}>
                     {format(new Date(message.timestamp), 'h:mm a')}
                   </span>
+                  
+                  {/* Specific fields to the assistant message */}
                   {message.role === 'assistant' && (
                     <div className="flex gap-2">
+                      {/* Copy Message Btn */}
                       <button
                         onClick={() => copyToClipboard(message.content)}
                         className={`p-1.5 rounded hover:bg-opacity-10 ${
@@ -306,6 +326,7 @@ export default function Home(): React.ReactElement {
                       >
                         <FiCopy className="w-4 h-4" />
                       </button>
+
                       {message.error && (
                         <button
                           onClick={() => handleRetry(index)}
@@ -322,6 +343,7 @@ export default function Home(): React.ReactElement {
                     </div>
                   )}
                 </div>
+                {/* Actual Message Body itself - using <ReactMarkdown> Component */}
                 <div className={`prose text-lg font-medium ${
                   isDarkMode 
                     ? message.role === 'user' ? 'text-gray-100' : 'text-gray-200'
@@ -378,7 +400,8 @@ export default function Home(): React.ReactElement {
             </div>
           </div>
         ))}
-        
+
+        {/* Three dots typing display when the assistant is generating an answer */}
         {isTyping && (
           <div className="flex justify-start">
             <div
@@ -403,7 +426,7 @@ export default function Home(): React.ReactElement {
           </div>
         )}
         
-        {/* Related Queries - shown only after a response and when not typing */}
+        {/* Related Queries - shown only when the assistant is not generating a response */}
         {!isTyping && relatedQueries.length > 0 && (
           <div ref={relatedQueriesRef} className="flex justify-end">
             <RelatedQueries 
@@ -417,9 +440,12 @@ export default function Home(): React.ReactElement {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Bottom footer -- contains the input text box and the submit button */}
       <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'} sticky bottom-0 z-10`}>
+        {/* Form consists of the submit button and the input field textbox */}
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
           <div className="relative">
+            {/* Input Box to put the new query */}
             <input
               ref={inputRef}
               type="text"
@@ -433,6 +459,7 @@ export default function Home(): React.ReactElement {
               }`}
               disabled={isLoading}
             />
+            {/* Submit button */}
             <button
               type="submit"
               className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1.5 rounded-full text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${

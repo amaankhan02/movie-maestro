@@ -440,7 +440,7 @@ class TMDbService:
             else "No previously discussed people"
         )
 
-        # First, analyze if we need movie data
+        # First, analyze what kind of data is needed
         analysis_result = await self.analyzer_chain.ainvoke(
             {
                 "query": query,
@@ -513,6 +513,8 @@ class TMDbService:
         for i, citation in enumerate(all_citations):
             citation_guide += f"\n[{i+1}] {citation.title}"
 
+        # TODO: improve by not generating the response here, but just returning the data
+        # since we generate a new response with the Wiki data in chat_service anyways
         # Generate the response
         response = await self.response_generator_chain.ainvoke(
             {"query": query, "data": "\n\n".join(all_data) + citation_guide}

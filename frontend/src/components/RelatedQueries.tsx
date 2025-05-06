@@ -15,6 +15,9 @@ const RelatedQueries: React.FC<RelatedQueriesProps> = ({
   const [visible, setVisible] = useState(false);
 
   // Add animation effect - show queries after a small delay
+  // Intially it is not visible but after 600ms it will become visible
+  // Only runs when the component mounts, and when the component unmounts,
+  // the function that is returned will run, which clears the timer
   useEffect(() => {
     const timer = setTimeout(() => {
       setVisible(true);
@@ -28,11 +31,15 @@ const RelatedQueries: React.FC<RelatedQueriesProps> = ({
 
   return (
     <div id="related-queries" className="flex flex-col space-y-6 w-full md:max-w-[80%] mx-auto mt-4 pt-4 pb-8 scroll-mt-8">
+
+      {/* Title */}
       <h2 className={`text-2xl font-bold text-center ${
         isDarkMode ? 'text-gray-200' : 'text-gray-800'
       }`}>
         Related queries
       </h2>
+
+      {/* The related query buttons */}
       <div className="flex flex-col gap-2">
         {queries.map((query, index) => (
           <button

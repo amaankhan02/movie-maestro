@@ -59,6 +59,7 @@ export default function LandingPage({ onSearch, isDarkMode }: LandingPageProps):
               "What are Christopher Nolan's best-rated films?",
               "How has Pulp Fiction impacted Cinema over the years?"
             ].map((suggestion, index) => (
+              // Create a set of buttons for each suggestion from that list
               <button
                 key={index}
                 onClick={() => {

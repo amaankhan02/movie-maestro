@@ -22,12 +22,13 @@ class WikipediaService:
         self.llm = llm
         self.base_url = "https://en.wikipedia.org/api/rest_v1"
         self.search_url = "https://en.wikipedia.org/w/api.php"
-        self.analyzer_chain = self._create_query_analyzer_chain()
+        self.analyzer_chain = self._create_query_analyzer_chain()   # [DEPRECATED]
         self.summarizer_chain = self._create_content_summarizer_chain()
         self.search_term_generator = self._create_search_term_generator()
         self.wiki_history = {}  # Track Wikipedia topics queried by conversation_id
         self.cache = {}  # Simple in-memory cache for Wikipedia articles
 
+    # [DEPRECATED]
     def _create_query_analyzer_chain(self):
         """Creates a chain that decides if a query requires Wikipedia data"""
         template = """
@@ -109,19 +110,20 @@ class WikipediaService:
 
     def search_wikipedia(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
         """Search Wikipedia for articles related to the query.
-
+        
         Args:
             query: The search query
             limit: Maximum number of results to return
 
         Returns:
-            List of search results
+            List of matching articles based on the query term. Does not return the entire article content.
         """
         # Check cache first
         cache_key = f"search:{query}"
         if cache_key in self.cache:
             return self.cache[cache_key]
 
+        # Parameters determine the type of search (article titles only)
         params = {
             "action": "query",
             "format": "json",
@@ -145,7 +147,7 @@ class WikipediaService:
             return []
 
     def fetch_article_content(self, page_title: str) -> Optional[Dict[str, Any]]:
-        """Fetch the content of a Wikipedia article using extended mode.
+        """Fetch the content of a Wikipedia article.
 
         Args:
             page_title: Title of the Wikipedia page

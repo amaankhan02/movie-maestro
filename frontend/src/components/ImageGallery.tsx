@@ -18,6 +18,8 @@ export default function ImageGallery({ images, isDarkMode }: ImageGalleryProps):
 
   return (
     <div className="mt-4">
+      
+      {/* Show the images in a gallery format inside this div container */}
       <div className="grid grid-cols-2 gap-2">
         {images.map((image, index) => (
           <div 
@@ -44,15 +46,19 @@ export default function ImageGallery({ images, isDarkMode }: ImageGalleryProps):
         ))}
       </div>
 
+      {/* When an image is selected, display it full screen */}
       {selectedImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4">
           <div className="relative max-w-4xl max-h-full">
+            {/* X button on the top right */}
             <button 
               className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-1"
               onClick={() => setSelectedImage(null)}
             >
               <FiX className="w-6 h-6" />
             </button>
+
+            {/* Image Itself */}
             <Image 
               src={selectedImage.url} 
               alt={selectedImage.alt} 
@@ -60,6 +66,8 @@ export default function ImageGallery({ images, isDarkMode }: ImageGalleryProps):
               height={675}
               className="w-full h-auto max-h-[90vh] object-contain" 
             />
+
+            {/* Caption for the Image */}
             {selectedImage.caption && (
               <p className="text-white text-center mt-2">{selectedImage.caption}</p>
             )}
